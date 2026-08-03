@@ -1,9 +1,25 @@
+import os
 import logging
+from threading import Thread
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# Token đã được gắn trực tiếp vào mã nguồn
-TOKEN = "8910844792:AAE8x-e3UST4my-RhdQvBY-swhv9m8TGBVY"
+# --- WEB SERVER ĐỂ RENDER HEALTH CHECK (CHỐNG TIMED OUT) ---
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot Nhau Pho Simulator is Running Live!")
+
+def run_health_check_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
+    print(f"🌐 Web Server dang chay tren port {port}...")
+    server.serve_forever()
+
+# --- MAIN BOT TELEGRAM ---
+TOKEN = os.getenv("BOT_TOKEN", "8910844792:AAE8x-e3UST4my-RhdQvBY-swhv9m8TGBVY")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -12,12 +28,11 @@ logging.basicConfig(
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
-    
-    # Nút mở Game Webview 2D (Sau này thay bằng link game thật)
+    # Link Game GitHub Pages của sếp
     game_url = "https://hanh2k9-dzai.github.io/nhau-pho-bot/" 
     
     keyboard = [
-        [InlineKeyboardButton("🍺 VÀO GAME NHẬU NGAY!", web_app=WebAppInfo(url=https://hanh2k9-dzai.github.io/nhau-pho-bot/)]
+        [InlineKeyboardButton("🍺 VÀO GAME NHẬU NGAY!", web_app=WebAppInfo(url=game_url))]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -29,6 +44,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 if __name__ == '__main__':
+    # Chạy Web Server ở luồng phụ (background thread) để Render không báo Timed Out
+    Thread(target=run_health_check_server, daemon=True).start()
+    
+    # Chạy Telegram Bot
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     print("🚀 Bot Nhậu Phố Simulator đang chạy...")

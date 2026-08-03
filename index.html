@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nhậu Phố Simulator 2D</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: #1e1e24; color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center; user-select: none;
+            overflow: hidden;
+        }
+        #app {
+            display: flex; flex-direction: column;
+            justify-content: space-between; height: 100vh;
+            padding: 20px 15px; box-sizing: border-box;
+        }
+        .user-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px; border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .score-val { font-size: 32px; font-weight: bold; color: #f1c40f; }
+        .beer-container { margin: 20px 0; cursor: pointer; }
+        .beer-icon {
+            font-size: 110px; display: inline-block;
+            transition: transform 0.08s ease;
+            filter: drop-shadow(0 10px 20px rgba(241, 196, 15, 0.3));
+        }
+        .beer-icon:active { transform: scale(0.85) rotate(-10deg); }
+        .shop-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px; border-radius: 16px;
+        }
+        .btn-buy {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white; border: none; padding: 12px;
+            font-size: 15px; border-radius: 10px;
+            font-weight: bold; width: 100%; margin-top: 8px;
+            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn-buy:disabled { background: #555; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="user-card">
+        <h3 id="user-name">🍺 Chủ Quán Nhậu</h3>
+        <div>Đô nhậu hiện tại: <div class="score-val" id="score">0 🍻</div></div>
+    </div>
+
+    <div class="beer-container" onclick="tapBeer()">
+        <div class="beer-icon" id="beer">🍻</div>
+        <div style="color: #888; font-size: 13px; margin-top: 10px;">Chạm liên tục để cụng ly!</div>
+    </div>
+
+    <div class="shop-box">
+        <h4 style="margin: 0 0 10px 0; color: #e74c3c;">Menu Mồi Nhậu 🥓</h4>
+        <button class="btn-buy" id="btn-lac" onclick="buyMoi('lac')">🥜 Đĩa Lạc Rang (Giá: 10 🍺) [+1/s]</button>
+        <button class="btn-buy" id="btn-muc" onclick="buyMoi('muc')">🦑 Mực Nướng Cồn (Giá: 50 🍺) [+5/s]</button>
+    </div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let score = 0;
+    let dps = 0;
+    let costLac = 10, costMuc = 50;
+    let rateLac = 1, rateMuc = 5;
+
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        document.getElementById('user-name').innerText = "🍺 " + tg.initDataUnsafe.user.first_name;
+    }
+
+    function tapBeer() {
+        score++;
+        update();
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function buyMoi(type) {
+        if (type === 'lac' && score >= costLac) {
+            score -= costLac; dps += rateLac;
+            costLac = Math.floor(costLac * 1.4);
+        } else if (type === 'muc' && score >= costMuc) {
+            score -= costMuc; dps += rateMuc;
+            costMuc = Math.floor(costMuc * 1.4);
+        }
+        update();
+    }
+
+    function update() {
+        document.getElementById('score').innerText = score + " 🍻";
+        document.getElementById('btn-lac').innerText = `🥜 Đĩa Lạc Rang (${costLac} 🍺) [+${rateLac}/s]`;
+        document.getElementById('btn-muc').innerText = `🦑 Mực Nướng Cồn (${costMuc} 🍺) [+${rateMuc}/s]`;
+        
+        document.getElementById('btn-lac').disabled = score < costLac;
+        document.getElementById('btn-muc').disabled = score < costMuc;
+    }
+
+    setInterval(() => {
+        score += dps;
+        update();
+    }, 1000);
+</script>
+
+</body>
+</html>

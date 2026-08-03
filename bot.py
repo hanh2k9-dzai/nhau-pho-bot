@@ -14,10 +14,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
     
     # Nút mở Game Webview 2D (Sau này thay bằng link game thật)
-    game_url = "https://google.com" 
+    game_url = "https://hanh2k9-dzai.github.io/nhau-pho-bot/" 
     
     keyboard = [
-        [InlineKeyboardButton("🍺 VÀO GAME NHẬU NGAY!", web_app=WebAppInfo(url=game_url))]
+        [InlineKeyboardButton("🍺 VÀO GAME NHẬU NGAY!", web_app=WebAppInfo(url=https://hanh2k9-dzai.github.io/nhau-pho-bot/)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 

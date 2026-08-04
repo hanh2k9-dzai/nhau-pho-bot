@@ -3,154 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Mobile - Combat</title>
+    <title>Nhậu Phố Mobile - Fixed Joystick</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; }
-        body { background: #111; color: white; font-family: sans-serif; overflow: hidden; }
-        canvas { display: block; background: #2c221e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+        body, html { width: 100%; height: 100%; background: #111; overflow: hidden; font-family: sans-serif; }
+        canvas { display: block; background: #2c221e; width: 100vw; height: 100vh; }
 
-        /* Vùng điều khiển Joystick (Trái) */
+        /* Joystick Vùng ngoài */
         #joystick-zone {
-            position: absolute; bottom: 30px; left: 30px;
+            position: absolute; bottom: 40px; left: 40px;
             width: 120px; height: 120px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 50%;
+            z-index: 99;
         }
+        /* Núm tròn di chuyển bên trong */
         #joystick-knob {
-            position: absolute; top: 35px; left: 35px;
+            position: absolute; 
+            top: 50%; left: 50%;
             width: 50px; height: 50px;
-            background: rgba(255, 255, 255, 0.6);
+            margin-top: -25px; margin-left: -25px;
+            background: rgba(255, 255, 255, 0.8);
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            pointer-events: none; /* Tránh cản trở cảm ứng */
         }
 
-        /* Vùng nút Skill / Combat (Phải) */
+        /* Nút Chiêu Thức */
         .action-btn {
-            position: absolute;
-            border-radius: 50%;
-            border: none; color: white; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            display: flex; align-items: center; justify-content: center;
+            position: absolute; border-radius: 50%; border: none; color: white; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            z-index: 99; -webkit-tap-highlight-color: transparent;
         }
         .action-btn:active { transform: scale(0.9); }
 
-        #btn-attack { bottom: 40px; right: 40px; width: 75px; height: 75px; background: #e74c3c; font-size: 16px; }
-        #btn-defend { bottom: 130px; right: 30px; width: 55px; height: 55px; background: #3498db; font-size: 13px; }
-        #btn-skill1 { bottom: 40px; right: 130px; width: 55px; height: 55px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
-        #btn-skill2 { bottom: 110px; right: 105px; width: 55px; height: 55px; background: #9b59b6; font-size: 13px; }
+        #btn-attack { bottom: 30px; right: 30px; width: 80px; height: 80px; background: #e74c3c; font-size: 18px; }
+        #btn-defend { bottom: 125px; right: 25px; width: 60px; height: 60px; background: #3498db; font-size: 14px; }
+        #btn-skill1 { bottom: 30px; right: 125px; width: 60px; height: 60px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
+        #btn-skill2 { bottom: 100px; right: 95px; width: 60px; height: 60px; background: #9b59b6; font-size: 13px; }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Cần gạt Joystick tròn -->
+    <!-- Controls -->
     <div id="joystick-zone"><div id="joystick-knob"></div></div>
 
-    <!-- Cụm nút chiêu thức -->
-    <button class="action-btn" id="btn-attack" onclick="doAction('ATTACK')">ĐẤM</button>
-    <button class="action-btn" id="btn-defend" onclick="doAction('DEFEND')">THỦ</button>
-    <button class="action-btn" id="btn-skill1" onclick="doAction('CHAI_BIA')">🍾 NÉM</button>
-    <button class="action-btn" id="btn-skill2" onclick="doAction('XOAY_BAN')">🪑 XOAY</button>
+    <button class="action-btn" id="btn-attack">ĐẤM</button>
+    <button class="action-btn" id="btn-defend">THỦ</button>
+    <button class="action-btn" id="btn-skill1">🍾 NÉM</button>
+    <button class="action-btn" id="btn-skill2">🪑 XOAY</button>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
 
-        // 1. Sprites & Nhân vật
-        const imgIdle = new Image(); imgIdle.src = "char_a_p1_1out_pfpn_v01.png";[span_0](start_span)[span_0](end_span)
-        const imgFight = new Image(); imgFight.src = "char_a_p1_1out_fstr_v01.png";[span_1](start_span)[span_1](end_span)
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
 
+        // 1. Nạp Ảnh An Toàn
+        let imgIdleLoaded = false, imgFightLoaded = false;
+        const imgIdle = new Image();
+        imgIdle.onload = () => { imgIdleLoaded = true; };
+        imgIdle.src = "char_a_p1_1out_pfpn_v01.png";[span_0](start_span)[span_0](end_span)
+
+        const imgFight = new Image();
+        imgFight.onload = () => { imgFightLoaded = true; };
+        imgFight.src = "char_a_p1_1out_fstr_v01.png";[span_1](start_span)[span_1](end_span)
+
+        // 2. Nhân Vật
         let player = {
-            x: canvas.width / 2, y: canvas.height / 2,
-            size: 80, speed: 4,
+            x: window.innerWidth / 2, y: window.innerHeight / 2,
+            size: 80, speed: 6,
             vx: 0, vy: 0,
-            state: "IDLE", // IDLE, ATTACK, DEFEND, SKILL
-            actionText: "Bình thường", actionTimer: 0
+            state: "IDLE", actionText: "", actionTimer: 0
         };
 
-        let fxList = []; // Hiệu ứng chiêu thức (Chai bia, Vòng xoay bàn nhậu)
+        let fxList = [];
 
-        // 2. Logic Cần gạt Joystick
+        // 3. LOGIC JOYSTICK SỬA LỖI 100%
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
-        let joystickActive = false;
-        let joyOrigin = { x: 0, y: 0 };
+        let touchId = null;
 
         zone.addEventListener("touchstart", (e) => {
-            joystickActive = true;
-            const rect = zone.getBoundingClientRect();
-            joyOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        });
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            touchId = touch.identifier;
+            updateJoystick(touch);
+        }, { passive: false });
 
         window.addEventListener("touchmove", (e) => {
-            if (!joystickActive) return;
-            const touch = e.touches[0];
-            let dx = touch.clientX - joyOrigin.x;
-            let dy = touch.clientY - joyOrigin.y;
-            let dist = Math.hypot(dx, dy);
-            let maxRadius = 40;
+            if (touchId === null) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === touchId) {
+                    updateJoystick(e.changedTouches[i]);
+                    break;
+                }
+            }
+        }, { passive: false });
 
-            if (dist > maxRadius) {
-                dx = (dx / dist) * maxRadius;
-                dy = (dy / dist) * maxRadius;
+        const resetJoystick = (e) => {
+            if (touchId === null) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === touchId) {
+                    touchId = null;
+                    knob.style.transform = `translate(0px, 0px)`;
+                    player.vx = 0;
+                    player.vy = 0;
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener("touchend", resetJoystick);
+        window.addEventListener("touchcancel", resetJoystick);
+
+        function updateJoystick(touch) {
+            const rect = zone.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            let distance = Math.hypot(dx, dy);
+            let maxRadius = 45;
+
+            if (distance > maxRadius) {
+                dx = (dx / distance) * maxRadius;
+                dy = (dy / distance) * maxRadius;
             }
 
+            // Dịch chuyển núm tròn visual
             knob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+            // Gán tốc độ di chuyển cho nhân vật
             player.vx = (dx / maxRadius) * player.speed;
             player.vy = (dy / maxRadius) * player.speed;
-        });
+        }
 
-        window.addEventListener("touchend", () => {
-            joystickActive = false;
-            knob.style.transform = `translate(0px, 0px)`;
-            player.vx = 0; player.vy = 0;
-        });
-
-        // 3. Xử lý Chiêu Thức & Tấn Công
+        // 4. Xử lý Chiêu Thức
         function doAction(type) {
-            player.actionTimer = 30; // Kéo dài hiệu ứng 30 frames
+            player.actionTimer = 25;
             if (type === "ATTACK") {
-                player.state = "ATTACK";
-                player.actionText = "👊 Đấm Côn Đồ!";
+                player.state = "ATTACK"; player.actionText = "👊 Đấm Côn Đồ!";
             } else if (type === "DEFEND") {
-                player.state = "DEFEND";
-                player.actionText = "🛡️ Thủ Ghế (Giảm 80% Sát thương)";
+                player.state = "DEFEND"; player.actionText = "🛡️ Thủ Ghế!";
             } else if (type === "CHAI_BIA") {
-                player.state = "SKILL";
-                player.actionText = "🍾 Phi Chai Bia!";
-                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: 10, vy: -2, life: 40 });
+                player.state = "SKILL"; player.actionText = "🍾 Phi Chai Bia!";
+                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: 12, vy: 0, life: 30 });
             } else if (type === "XOAY_BAN") {
-                player.state = "SKILL";
-                player.actionText = "🪑 Tuyệt Kỹ: Xoay Bàn Nhậu!";
-                fxList.push({ type: "SPIN_TABLE", x: player.x, y: player.y, radius: 20, life: 30 });
+                player.state = "SKILL"; player.actionText = "🪑 Xoay Bàn Nhậu!";
+                fxList.push({ type: "SPIN_TABLE", x: player.x, y: player.y, radius: 10, life: 20 });
             }
         }
 
-        // 4. Game Loop
+        function bindBtn(id, type) {
+            const btn = document.getElementById(id);
+            btn.addEventListener("touchstart", (e) => { e.preventDefault(); doAction(type); }, { passive: false });
+        }
+
+        bindBtn("btn-attack", "ATTACK");
+        bindBtn("btn-defend", "DEFEND");
+        bindBtn("btn-skill1", "CHAI_BIA");
+        bindBtn("btn-skill2", "XOAY_BAN");
+
+        // 5. Game Loop
         function update() {
-            // Cập nhật vị trí nhân vật từ Joystick
             player.x += player.vx;
             player.y += player.vy;
 
-            // Giữ trong màn hình
             player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
             player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
 
-            // Đếm ngược trạng thái hành động
             if (player.actionTimer > 0) {
                 player.actionTimer--;
                 if (player.actionTimer === 0) player.state = "IDLE";
             }
 
-            // Cập nhật hiệu ứng chiêu thức
             fxList.forEach((fx, index) => {
                 fx.life--;
                 if (fx.type === "BOTTLE") fx.x += fx.vx;
-                if (fx.type === "SPIN_TABLE") fx.radius += 4;
+                if (fx.type === "SPIN_TABLE") fx.radius += 6;
                 if (fx.life <= 0) fxList.splice(index, 1);
             });
         }
@@ -158,11 +198,11 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Sàn quán nhậu
+            // Vẽ sàn
             ctx.fillStyle = "#3a2e2b";
             ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-            // Vẽ hiệu ứng chiêu thức
+            // Vẽ Skill
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
                     ctx.fillStyle = "#2ecc71";
@@ -173,24 +213,31 @@
                 }
             });
 
-            // Vẽ nhân vật
-            let currentImg = (player.state === "IDLE") ? imgIdle : imgFight;
-            if (currentImg.complete && currentImg.naturalWidth !== 0) {
-                ctx.drawImage(currentImg, player.x - player.size/2, player.y - player.size/2, player.size, player.size);
-            } else {
-                ctx.fillStyle = player.state === "DEFEND" ? "#3498db" : (player.state === "IDLE" ? "#2ecc71" : "#e74c3c");
-                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2); ctx.fill();
-            }
+            // Vẽ Nhân vật
+            let isFighting = (player.state !== "IDLE");
+            let targetImg = isFighting ? imgFight : imgIdle;
+            let isLoaded = isFighting ? imgFightLoaded : imgIdleLoaded;
 
-            // Vẽ Giáp Phòng Thủ nếu đang THỦ
+            if (isLoaded) {
+                try {
+                    ctx.drawImage(targetImg, player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+                } catch(e) { drawFallbackPlayer(); }
+            } else { drawFallbackPlayer(); }
+
+            // Giáp Phòng Thủ
             if (player.state === "DEFEND") {
                 ctx.strokeStyle = "#3498db"; ctx.lineWidth = 5;
                 ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2 + 10, 0, Math.PI * 2); ctx.stroke();
             }
 
-            // HUD / Thông báo
-            ctx.fillStyle = "#fff"; ctx.font = "18px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText(player.actionTimer > 0 ? player.actionText : "Trạng thái: Đang di chuyển...", canvas.width / 2, 40);
+            // HUD Text
+            ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(player.actionTimer > 0 ? player.actionText : "Kéo Cần Gạt Tròn Để Di Chuyển", canvas.width / 2, 40);
+        }
+
+        function drawFallbackPlayer() {
+            ctx.fillStyle = player.state === "DEFEND" ? "#3498db" : (player.state === "IDLE" ? "#2ecc71" : "#e74c3c");
+            ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2); ctx.fill();
         }
 
         function loop() {

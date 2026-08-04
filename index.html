@@ -3,33 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Mini App</title>
+    <title>Nhậu Phố Simulator</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #111; font-family: sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1615; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
+
+        /* MÀN HÌNH MENU */
+        #menu-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #2c1f1d 0%, #110d0c 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px; text-align: center;
+        }
+        #menu-screen h1 {
+            font-size: 32px; color: #f1c40f; text-shadow: 0 4px 10px rgba(0,0,0,0.7);
+            margin-bottom: 10px; font-weight: 900;
+        }
+        #menu-screen p.subtitle {
+            font-size: 14px; color: #bdc3c7; margin-bottom: 30px;
+        }
+        .menu-btn {
+            width: 220px; padding: 14px 20px; margin: 10px 0; border: none; border-radius: 25px;
+            font-size: 16px; font-weight: bold; color: white; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: transform 0.1s;
+        }
+        .menu-btn:active { transform: scale(0.95); }
+        #btn-start { background: linear-gradient(45deg, #e67e22, #e74c3c); }
+        #btn-guide { background: linear-gradient(45deg, #3498db, #2980b9); }
+
+        /* POPUP HƯỚNG DẪN */
+        #guide-modal {
+            display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); z-index: 1001;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content {
+            background: #2c221e; border: 2px solid #f1c40f; border-radius: 15px;
+            padding: 20px; max-width: 320px; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+        .modal-content h3 { color: #f1c40f; margin-bottom: 15px; text-align: center; }
+        .modal-content ul { list-style: none; line-height: 1.8; font-size: 14px; margin-bottom: 20px; }
+        .close-btn {
+            width: 100%; padding: 10px; background: #e74c3c; color: white; border: none;
+            border-radius: 8px; font-weight: bold;
+        }
+
+        /* GAME CANVAS & CONTROLS */
         canvas { display: block; width: 100vw; height: 100vh; background: #2c221e; }
+
+        /* Nút Back Menu trong game */
+        #btn-back-menu {
+            position: absolute; top: 15px; left: 15px; z-index: 999;
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.4);
+            color: white; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold;
+        }
 
         /* Joystick (Trái) */
         #joystick-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 110px; height: 110px;
-            background: rgba(255, 255, 255, 0.25);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%; z-index: 999;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%; z-index: 999; display: none;
         }
         #joystick-knob {
             position: absolute; top: 50%; left: 50%;
-            width: 46px; height: 46px;
-            margin-top: -23px; margin-left: -23px;
-            background: #ffffff;
-            border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            width: 46px; height: 46px; margin-top: -23px; margin-left: -23px;
+            background: #ffffff; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
             pointer-events: none;
         }
 
         /* Nút Skill (Phải) */
         .action-btn {
             position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); color: white; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center;
             z-index: 999; -webkit-tap-highlight-color: transparent;
         }
         .action-btn:active { transform: scale(0.9); }
@@ -42,11 +89,31 @@
 </head>
 <body>
 
+    <div id="menu-screen">
+        <h1>🍻 NHẬU PHỐ 2D</h1>
+        <p class="subtitle">Mini App Game Đại Chiến Quán Nhậu</p>
+        <button class="menu-btn" id="btn-start">🚀 BẮT ĐẦU NHẬU</button>
+        <button class="menu-btn" id="btn-guide">📖 HƯỚNG DẪN</button>
+    </div>
+
+    <div id="guide-modal">
+        <div class="modal-content">
+            <h3>📖 CÁCH CHƠI</h3>
+            <ul>
+                <li>🕹️ <b>Cần gạt (Trái):</b> Di chuyển nhân vật.</li>
+                <li>👊 <b>Nút ĐẤM:</b> Cận chiến liên hoàn.</li>
+                <li>🛡️ <b>Nút THỦ:</b> Dùng ghế đỡ sát thương.</li>
+                <li>🍾 <b>Nút NÉM:</b> Phi chai bia tầm xa.</li>
+                <li>🪑 <b>Nút XOAY:</b> Quét sạch bàn xung quanh.</li>
+            </ul>
+            <button class="close-btn" onclick="toggleGuide(false)">ĐÃ HIỂU</button>
+        </div>
+    </div>
+
+    <button id="btn-back-menu" style="display:none;" onclick="returnToMenu()">🏠 MENU</button>
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Controls UI -->
     <div id="joystick-zone"><div id="joystick-knob"></div></div>
-
     <button class="action-btn" id="btn-attack">ĐẤM</button>
     <button class="action-btn" id="btn-defend">THỦ</button>
     <button class="action-btn" id="btn-skill1">🍾 NÉM</button>
@@ -56,6 +123,8 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
+        let gameState = "MENU"; // "MENU" hoặc "PLAYING"
+
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -63,30 +132,59 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // SYSTEM LOAD AN TOÀN NHÂN VẬT
-        let imgLoaded = false;
-        const playerImg = new Image();
+        // SYSTEM NẠP FILE ẢNH NHÂN VẬT CỦA BẠN (100% FILE ẢNH)
+        const imgIdle = new Image();
+        let idleLoaded = false;
+        imgIdle.onload = () => { idleLoaded = true; };
+        imgIdle.src = "char_a_p1_1out_pfpn_v01.png";
 
-        playerImg.onload = () => { imgLoaded = true; };
-        playerImg.onerror = () => {
-            // Backup Link Online nếu file local bị Telegram cản trở
-            playerImg.src = "https://api.iconify.design/noto:ninja.svg";
-        };
-        // Load thử file local
-        playerImg.src = "char_a_p1_1out_pfpn_v01.png";
+        const imgFight = new Image();
+        let fightLoaded = false;
+        imgFight.onload = () => { fightLoaded = true; };
+        imgFight.src = "char_a_p1_1out_fstr_v01.png";
+
+        // Tự động tính toán Animation Frame nếu ảnh của bạn là Sprite Sheet
+        let animFrame = 0;
+        let animTimer = 0;
 
         // Player Info
         let player = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
-            size: 80, speed: 5,
+            size: 90, speed: 5,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
 
         let fxList = [];
 
-        // JOYSTICK TOUCH LOGIC (CHUẨN 100%)
+        // QUẢN LÝ MÀN HÌNH MENU / GAME
+        function startGame() {
+            gameState = "PLAYING";
+            document.getElementById("menu-screen").style.display = "none";
+            document.getElementById("btn-back-menu").style.display = "block";
+            document.getElementById("joystick-zone").style.display = "block";
+            document.querySelectorAll(".action-btn").forEach(btn => btn.style.display = "flex");
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+        }
+
+        function returnToMenu() {
+            gameState = "MENU";
+            document.getElementById("menu-screen").style.display = "flex";
+            document.getElementById("btn-back-menu").style.display = "none";
+            document.getElementById("joystick-zone").style.display = "none";
+            document.querySelectorAll(".action-btn").forEach(btn => btn.style.display = "none");
+        }
+
+        function toggleGuide(show) {
+            document.getElementById("guide-modal").style.display = show ? "flex" : "none";
+        }
+
+        document.getElementById("btn-start").onclick = startGame;
+        document.getElementById("btn-guide").onclick = () => toggleGuide(true);
+
+        // JOYSTICK CONTROLS
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
         let activeTouchId = null;
@@ -171,13 +269,15 @@
         bindBtn("btn-skill1", "CHAI_BIA");
         bindBtn("btn-skill2", "XOAY_BAN");
 
-        // GAME LOOP
+        // UPDATE GAME
         function update() {
+            if (gameState !== "PLAYING") return;
+
             player.x += player.vx;
             player.y += player.vy;
 
-            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
-            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
+            player.x = Math.max(45, Math.min(canvas.width - 45, player.x));
+            player.y = Math.max(45, Math.min(canvas.height - 45, player.y));
 
             if (player.actionTimer > 0) {
                 player.actionTimer--;
@@ -190,27 +290,34 @@
                 if (fx.type === "SPIN") fx.r += 6;
                 if (fx.life <= 0) fxList.splice(i, 1);
             });
+
+            // Tăng timer animation
+            animTimer++;
+            if (animTimer % 8 === 0) {
+                animFrame = (animFrame + 1) % 4; // Duyệt frame
+            }
         }
 
+        // DRAW GAME
         function draw() {
-            // Background Sàn
+            if (gameState !== "PLAYING") return;
+
+            // Background Sàn quán
             ctx.fillStyle = "#3a2e2b";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Bàn nhậu trang trí
             ctx.fillStyle = "#5c4033";
-            ctx.beginPath(); ctx.arc(100, 100, 45, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(canvas.width - 100, 120, 45, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(100, 120, 45, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(canvas.width - 100, 140, 45, 0, Math.PI*2); ctx.fill();
 
             // Hiệu ứng Chiêu
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
                     ctx.save();
                     ctx.translate(fx.x, fx.y);
-                    ctx.fillStyle = "#27ae60";
-                    ctx.fillRect(-10, -4, 16, 8);
-                    ctx.fillStyle = "#f39c12";
-                    ctx.fillRect(6, -2, 6, 4);
+                    ctx.fillStyle = "#27ae60"; ctx.fillRect(-10, -4, 16, 8);
+                    ctx.fillStyle = "#f39c12"; ctx.fillRect(6, -2, 6, 4);
                     ctx.restore();
                 } else if (fx.type === "SPIN") {
                     ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 5;
@@ -218,12 +325,30 @@
                 }
             });
 
-            // VẼ NHÂN VẬT
-            if (imgLoaded) {
-                ctx.drawImage(playerImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
-            } else {
-                // Tự động vẽ Ninja Pixel nếu chưa có ảnh
-                drawBackupNinja();
+            // VẼ CHUẨN ĐÚNG FILE ẢNH NHÂN VẬT CỦA BẠN
+            let activeImg = (player.state !== "IDLE") ? imgFight : imgIdle;
+            let isReady = (player.state !== "IDLE") ? fightLoaded : idleLoaded;
+
+            if (isReady && activeImg.naturalWidth > 0) {
+                // Tự kiểm tra nếu ảnh là Sprite Sheet (Chiều rộng lớn gấp nhiều lần chiều cao)
+                let frameWidth = activeImg.naturalWidth;
+                let frameHeight = activeImg.naturalHeight;
+
+                if (frameWidth > frameHeight) {
+                    // Nếu là Sprite Sheet chứa nhiều ô ảnh
+                    let totalCols = Math.floor(frameWidth / frameHeight);
+                    let singleWidth = frameWidth / totalCols;
+                    let currentColumn = animFrame % totalCols;
+
+                    ctx.drawImage(
+                        activeImg,
+                        currentColumn * singleWidth, 0, singleWidth, frameHeight, // Cắt 1 frame từ sprite sheet
+                        player.x - player.size / 2, player.y - player.size / 2, player.size, player.size // Vẽ lên canvas
+                    );
+                } else {
+                    // Nếu là 1 tệp ảnh đơn bình thường
+                    ctx.drawImage(activeImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+                }
             }
 
             // Giáp Phòng Thủ
@@ -235,22 +360,6 @@
             // HUD Text
             ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
             ctx.fillText(player.actionTimer > 0 ? player.actionText : "KÉO CẦN GẠT ĐỂ DI CHUYỂN", canvas.width / 2, 40);
-        }
-
-        function drawBackupNinja() {
-            ctx.save();
-            ctx.translate(player.x, player.y);
-            // Đầu Ninja
-            ctx.fillStyle = "#2c3e50";
-            ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.fill();
-            // Khăn che mặt
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(-20, -10, 40, 15);
-            // Mắt
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath(); ctx.arc(-8, -3, 4, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(8, -3, 4, 0, Math.PI * 2); ctx.fill();
-            ctx.restore();
         }
 
         function loop() {

@@ -3,321 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Online - Avatar Style & Shop</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <title>Nhậu Phố Mobile - Combat</title>
     <style>
-        body {
-            margin: 0; padding: 0;
-            background-color: #1a1a1a;
-            display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
-            font-family: Arial, sans-serif;
-            touch-action: none;
-        }
-        
-        #top-ui {
-            width: 100%;
-            height: 50px; background-color: rgba(44, 62, 80, 0.95);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 10px; box-sizing: border-box; z-index: 10;
-            border-bottom: 2px solid #34495e;
-            flex-shrink: 0;
-        }
-        .user-info { display: flex; align-items: center; color: white; font-weight: bold; }
-        .user-avatar { width: 35px; height: 35px; background-color: #e67e22; border: 2px solid #fff; border-radius: 5px; margin-right: 8px; }
-        .menu-buttons { display: flex; gap: 8px; }
-        .menu-btn {
-            background-color: #2980b9; color: white;
-            border: 2px solid #3498db; border-radius: 8px;
-            padding: 4px 8px; font-size: 11px; font-weight: bold;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center;
-        }
-        .menu-btn:active { background-color: #1c5980; }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; }
+        body { background: #111; color: white; font-family: sans-serif; overflow: hidden; }
+        canvas { display: block; background: #2c221e; }
 
-        #shop-modal {
-            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 400px; background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #f1c40f; border-radius: 10px; padding: 15px;
-            color: white; z-index: 100; display: none; box-sizing: border-box;
+        /* Vùng điều khiển Joystick (Trái) */
+        #joystick-zone {
+            position: absolute; bottom: 30px; left: 30px;
+            width: 120px; height: 120px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
         }
-        #shop-modal h3 { margin-top: 0; color: #f1c40f; text-align: center; }
-        .shop-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #2c3e50; padding: 8px; margin-bottom: 8px; border-radius: 5px;
-        }
-        .shop-item button {
-            background: #27ae60; color: white; border: none; padding: 5px 10px;
-            border-radius: 4px; font-weight: bold; cursor: pointer;
-        }
-        .shop-item button:active { background: #1e8449; }
-        #close-shop {
-            width: 100%; background: #c0392b; color: white; border: none;
-            padding: 8px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 5px;
-        }
-
-        /* Quan trọng: Định hình chiều cao cụ thể cho khung game */
-        #game-container { 
-            width: 100%; 
-            flex-grow: 1; 
-            position: relative; 
-            overflow: hidden;
-        }
-
-        #controls-container {
-            width: 100%; height: 160px;
-            background-color: #2c3e50;
-            display: flex; justify-content: space-around; align-items: center;
-            flex-shrink: 0;
-            border-top: 2px solid #34495e;
-        }
-        #d-pad { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-        .control-row { display: flex; gap: 25px; }
-        .btn {
+        #joystick-knob {
+            position: absolute; top: 35px; left: 35px;
             width: 50px; height: 50px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 2px solid #bdc3c7; border-radius: 50%;
-            font-size: 20px; color: #fff;
-            display: flex; justify-content: center; align-items: center;
-            user-select: none; cursor: pointer;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-        .btn.pressed { background-color: #f39c12; border-color: #f1c40f; }
-        
-        #btn-action {
-            width: 70px; height: 70px;
-            background-color: #7f8c8d; border-color: #95a5a6;
-            font-size: 24px; font-weight: bold; transition: 0.2s;
+
+        /* Vùng nút Skill / Combat (Phải) */
+        .action-btn {
+            position: absolute;
+            border-radius: 50%;
+            border: none; color: white; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
         }
-        #btn-action.active { background-color: #27ae60; border-color: #2ecc71; box-shadow: 0 0 15px #2ecc71; }
+        .action-btn:active { transform: scale(0.9); }
+
+        #btn-attack { bottom: 40px; right: 40px; width: 75px; height: 75px; background: #e74c3c; font-size: 16px; }
+        #btn-defend { bottom: 130px; right: 30px; width: 55px; height: 55px; background: #3498db; font-size: 13px; }
+        #btn-skill1 { bottom: 40px; right: 130px; width: 55px; height: 55px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
+        #btn-skill2 { bottom: 110px; right: 105px; width: 55px; height: 55px; background: #9b59b6; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<div id="top-ui">
-    <div class="user-info">
-        <div class="user-avatar"></div>
-        <div>
-            <div style="font-size: 13px;">Bợm Nhậu</div>
-            <div id="coin-display" style="color: #f1c40f; font-size: 11px;">💰 Xu: 50</div>
-        </div>
-    </div>
-    <div class="menu-buttons">
-        <div class="menu-btn" onclick="toggleShop()">🛒<span>Shop Đồ</span></div>
-        <div class="menu-btn" onclick="alert('Mời bạn bè nhận 500 Xu!')">🎁<span>Mời</span></div>
-        <div class="menu-btn" onclick="alert('Cài đặt âm thanh/rung')">⚙️<span>Cài</span></div>
-    </div>
-</div>
+    <canvas id="gameCanvas"></canvas>
 
-<div id="shop-modal">
-    <h3>🛍️ Tiệm Thời Trang Phố Nhậu</h3>
-    <div class="shop-item">
-        <span>👕 Áo Ba Sọc - 50 Xu</span>
-        <button onclick="buyItem('shirt_striped', 50)">Mua</button>
-    </div>
-    <div class="shop-item">
-        <span>🧑 Tóc Bờm Ngựa - 100 Xu</span>
-        <button onclick="buyItem('hair_spiky', 100)">Mua</button>
-    </div>
-    <button id="close-shop" onclick="toggleShop()">Đóng</button>
-</div>
+    <!-- Cần gạt Joystick tròn -->
+    <div id="joystick-zone"><div id="joystick-knob"></div></div>
 
-<div id="game-container"></div>
+    <!-- Cụm nút chiêu thức -->
+    <button class="action-btn" id="btn-attack" onclick="doAction('ATTACK')">ĐẤM</button>
+    <button class="action-btn" id="btn-defend" onclick="doAction('DEFEND')">THỦ</button>
+    <button class="action-btn" id="btn-skill1" onclick="doAction('CHAI_BIA')">🍾 NÉM</button>
+    <button class="action-btn" id="btn-skill2" onclick="doAction('XOAY_BAN')">🪑 XOAY</button>
 
-<div id="controls-container">
-    <div id="d-pad">
-        <div class="control-row"><div class="btn" id="btn-up" data-dir="up">⬆️</div></div>
-        <div class="control-row">
-            <div class="btn" id="btn-left" data-dir="left">⬅️</div>
-            <div class="btn" id="btn-right" data-dir="right">➡️</div>
-        </div>
-        <div class="control-row"><div class="btn" id="btn-down" data-dir="down">⬇️</div></div>
-    </div>
-    <div class="btn" id="btn-action">🍻</div>
-</div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-<script>
-let gameInstance = null;
+        // 1. Sprites & Nhân vật
+        const imgIdle = new Image(); imgIdle.src = "char_a_p1_1out_pfpn_v01.png";[span_0](start_span)[span_0](end_span)
+        const imgFight = new Image(); imgFight.src = "char_a_p1_1out_fstr_v01.png";[span_1](start_span)[span_1](end_span)
 
-function toggleShop() {
-    const modal = document.getElementById('shop-modal');
-    modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-}
-
-function buyItem(itemType, cost) {
-    if (gameInstance && gameInstance.scene.scenes[0]) {
-        gameInstance.scene.scenes[0].purchaseItem(itemType, cost);
-    }
-}
-
-class MainScene extends Phaser.Scene {
-    constructor() { 
-        super('MainScene'); 
-        this.coins = 50; 
-        this.canDrink = false; 
-    }
-
-    preload() {
-        const createChar = (key, shirtCol) => {
-            let g = this.make.graphics({ add: false });
-            g.fillStyle(0xffcc99); g.fillRect(8, 0, 16, 14); 
-            g.fillStyle(0x2c3e50); g.fillRect(8, 0, 16, 4);  
-            g.fillStyle(0x000000); g.fillRect(11, 6, 3, 3); g.fillRect(18, 6, 3, 3); 
-            g.fillStyle(shirtCol); g.fillRect(6, 14, 20, 16); 
-            g.fillStyle(0xffcc99); g.fillRect(2, 14, 4, 10); g.fillRect(26, 14, 4, 10); 
-            g.fillStyle(0x111111); g.fillRect(6, 30, 8, 10); g.fillRect(18, 30, 8, 10); 
-            g.generateTexture(key, 32, 40);
+        let player = {
+            x: canvas.width / 2, y: canvas.height / 2,
+            size: 80, speed: 4,
+            vx: 0, vy: 0,
+            state: "IDLE", // IDLE, ATTACK, DEFEND, SKILL
+            actionText: "Bình thường", actionTimer: 0
         };
 
-        createChar('player_default', 0xe67e22); 
-        createChar('player_striped', 0x3498db); 
-        createChar('npc_1', 0x9b59b6);        
-        createChar('npc_2', 0x1abc9c);        
+        let fxList = []; // Hiệu ứng chiêu thức (Chai bia, Vòng xoay bàn nhậu)
 
-        let g = this.make.graphics({ add: false });
-        g.fillStyle(0x34495e); g.fillRect(0, 0, 32, 32); 
-        g.lineStyle(1, 0x2c3e50); g.strokeRect(0, 0, 32, 32);
-        g.generateTexture('ground', 32, 32);
+        // 2. Logic Cần gạt Joystick
+        const zone = document.getElementById("joystick-zone");
+        const knob = document.getElementById("joystick-knob");
+        let joystickActive = false;
+        let joyOrigin = { x: 0, y: 0 };
 
-        g.clear();
-        g.fillStyle(0x8b4513); g.fillRect(10, 0, 40, 30); 
-        g.fillStyle(0xd35400); g.fillRect(0, 5, 8, 20); g.fillRect(52, 5, 8, 20); 
-        g.fillStyle(0x27ae60); g.fillRect(20, 8, 4, 10); g.fillRect(36, 8, 4, 10);
-        g.generateTexture('table', 60, 30);
-    }
+        zone.addEventListener("touchstart", (e) => {
+            joystickActive = true;
+            const rect = zone.getBoundingClientRect();
+            joyOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        });
 
-    create() {
-        for (let x = 0; x < 1200; x += 32) {
-            for (let y = 0; y < 900; y += 32) { 
-                this.add.image(x + 16, y + 16, 'ground'); 
+        window.addEventListener("touchmove", (e) => {
+            if (!joystickActive) return;
+            const touch = e.touches[0];
+            let dx = touch.clientX - joyOrigin.x;
+            let dy = touch.clientY - joyOrigin.y;
+            let dist = Math.hypot(dx, dy);
+            let maxRadius = 40;
+
+            if (dist > maxRadius) {
+                dx = (dx / dist) * maxRadius;
+                dy = (dy / dist) * maxRadius;
+            }
+
+            knob.style.transform = `translate(${dx}px, ${dy}px)`;
+            player.vx = (dx / maxRadius) * player.speed;
+            player.vy = (dy / maxRadius) * player.speed;
+        });
+
+        window.addEventListener("touchend", () => {
+            joystickActive = false;
+            knob.style.transform = `translate(0px, 0px)`;
+            player.vx = 0; player.vy = 0;
+        });
+
+        // 3. Xử lý Chiêu Thức & Tấn Công
+        function doAction(type) {
+            player.actionTimer = 30; // Kéo dài hiệu ứng 30 frames
+            if (type === "ATTACK") {
+                player.state = "ATTACK";
+                player.actionText = "👊 Đấm Côn Đồ!";
+            } else if (type === "DEFEND") {
+                player.state = "DEFEND";
+                player.actionText = "🛡️ Thủ Ghế (Giảm 80% Sát thương)";
+            } else if (type === "CHAI_BIA") {
+                player.state = "SKILL";
+                player.actionText = "🍾 Phi Chai Bia!";
+                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: 10, vy: -2, life: 40 });
+            } else if (type === "XOAY_BAN") {
+                player.state = "SKILL";
+                player.actionText = "🪑 Tuyệt Kỹ: Xoay Bàn Nhậu!";
+                fxList.push({ type: "SPIN_TABLE", x: player.x, y: player.y, radius: 20, life: 30 });
             }
         }
 
-        this.tables = this.physics.add.staticGroup();
-        this.npcs = this.physics.add.group();
+        // 4. Game Loop
+        function update() {
+            // Cập nhật vị trí nhân vật từ Joystick
+            player.x += player.vx;
+            player.y += player.vy;
 
-        const spawnTable = (x, y, npcKey, chatList) => {
-            this.tables.create(x, y, 'table');
-            let npc = this.npcs.create(x - 25, y, npcKey);
-            npc.setImmovable(true);
-            
-            this.time.addEvent({
-                delay: Phaser.Math.Between(6000, 12000),
-                callback: () => {
-                    let txt = Phaser.Math.RND.pick(chatList);
-                    this.showChat(npc.x, npc.y - 20, txt, '#ecf0f1');
-                },
-                loop: true
+            // Giữ trong màn hình
+            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
+            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
+
+            // Đếm ngược trạng thái hành động
+            if (player.actionTimer > 0) {
+                player.actionTimer--;
+                if (player.actionTimer === 0) player.state = "IDLE";
+            }
+
+            // Cập nhật hiệu ứng chiêu thức
+            fxList.forEach((fx, index) => {
+                fx.life--;
+                if (fx.type === "BOTTLE") fx.x += fx.vx;
+                if (fx.type === "SPIN_TABLE") fx.radius += 4;
+                if (fx.life <= 0) fxList.splice(index, 1);
             });
-        };
+        }
 
-        spawnTable(200, 200, 'npc_1', ["Làm ly nữa bác tài!", "Khô máu luôn anh em!", "Cho thêm đĩa đậu phộng!"]);
-        spawnTable(600, 200, 'npc_2', ["Quán này mồi ngon phết!", "Hôm nay say không về!", "Vô ông giáo ơi!"]);
-        spawnTable(400, 500, 'npc_1', ["Nâng ly chào đoàn kết!", "Ai bỏ cuộc là người đó yếu sinh lý!"]);
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        this.player = this.physics.add.sprite(300, 300, 'player_default');
-        this.player.setCollideWorldBounds(true);
-        this.physics.add.collider(this.player, this.tables);
-        this.physics.add.collider(this.player, this.npcs);
+            // Sàn quán nhậu
+            ctx.fillStyle = "#3a2e2b";
+            ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-        this.cameras.main.setBounds(0, 0, 1200, 900);
-        this.cameras.main.startFollow(this.player);
-        this.cameras.main.setZoom(1.3);
+            // Vẽ hiệu ứng chiêu thức
+            fxList.forEach(fx => {
+                if (fx.type === "BOTTLE") {
+                    ctx.fillStyle = "#2ecc71";
+                    ctx.beginPath(); ctx.arc(fx.x, fx.y, 10, 0, Math.PI * 2); ctx.fill();
+                } else if (fx.type === "SPIN_TABLE") {
+                    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.arc(player.x, player.y, fx.radius, 0, Math.PI * 2); ctx.stroke();
+                }
+            });
 
-        window.moveState = { left: false, right: false, up: false, down: false };
-        this.setupMobileControls();
-
-        this.actionBtn = document.getElementById('btn-action');
-        this.actionBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.doNhau(); });
-        this.actionBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.doNhau(); });
-        this.cursors = this.input.keyboard.createCursorKeys();
-        
-        document.getElementById('coin-display').innerText = '💰 Xu: ' + this.coins;
-    }
-
-    purchaseItem(itemType, cost) {
-        if (this.coins >= cost) {
-            this.coins -= cost;
-            document.getElementById('coin-display').innerText = '💰 Xu: ' + this.coins;
-            
-            if (itemType === 'shirt_striped') {
-                this.player.setTexture('player_striped');
-                alert("Đã mặc thành công Áo Ba Sọc phong cách Avatar!");
-            } else if (itemType === 'hair_spiky') {
-                alert("Đã đổi kiểu tóc mới cực chất!");
+            // Vẽ nhân vật
+            let currentImg = (player.state === "IDLE") ? imgIdle : imgFight;
+            if (currentImg.complete && currentImg.naturalWidth !== 0) {
+                ctx.drawImage(currentImg, player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+            } else {
+                ctx.fillStyle = player.state === "DEFEND" ? "#3498db" : (player.state === "IDLE" ? "#2ecc71" : "#e74c3c");
+                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2); ctx.fill();
             }
-            toggleShop();
-        } else {
-            alert("Không đủ Xu! Hãy ra bàn nhậu bấm 'DÔ!' kiếm thêm Xu nhé.");
+
+            // Vẽ Giáp Phòng Thủ nếu đang THỦ
+            if (player.state === "DEFEND") {
+                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2 + 10, 0, Math.PI * 2); ctx.stroke();
+            }
+
+            // HUD / Thông báo
+            ctx.fillStyle = "#fff"; ctx.font = "18px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(player.actionTimer > 0 ? player.actionText : "Trạng thái: Đang di chuyển...", canvas.width / 2, 40);
         }
-    }
 
-    showChat(x, y, textStr, bgColor) {
-        let txt = this.add.text(x, y, textStr, {
-            fontSize: '11px', fill: '#000', backgroundColor: bgColor,
-            padding: { x: 4, y: 4 }, fontStyle: 'bold'
-        });
-        txt.setOrigin(0.5, 1);
-        txt.setDepth(100);
-        
-        this.tweens.add({
-            targets: txt, y: y - 35, alpha: 0,
-            duration: 2500, ease: 'Power1',
-            onComplete: () => txt.destroy()
-        });
-    }
-
-    doNhau() {
-        if (this.canDrink) {
-            this.coins += 10;
-            document.getElementById('coin-display').innerText = '💰 Xu: ' + this.coins;
-            this.showChat(this.player.x, this.player.y - 20, "1, 2, 3 DÔ 🍻!", '#f1c40f');
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
         }
-    }
-
-    setupMobileControls() {
-        ['up', 'down', 'left', 'right'].forEach(dir => {
-            const btn = document.getElementById(`btn-${dir}`);
-            const press = (e) => { e.preventDefault(); window.moveState[dir] = true; btn.classList.add('pressed'); };
-            const release = (e) => { e.preventDefault(); window.moveState[dir] = false; btn.classList.remove('pressed'); };
-            btn.addEventListener('touchstart', press); btn.addEventListener('touchend', release); btn.addEventListener('touchcancel', release);
-            btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release); btn.addEventListener('mouseleave', release);
-        });
-    }
-
-    update() {
-        const speed = 130;
-        let vx = 0; let vy = 0;
-
-        if (this.cursors.left.isDown || window.moveState.left) vx = -speed;
-        else if (this.cursors.right.isDown || window.moveState.right) vx = speed;
-        
-        if (this.cursors.up.isDown || window.moveState.up) vy = -speed;
-        else if (this.cursors.down.isDown || window.moveState.down) vy = speed;
-
-        this.player.setVelocity(vx, vy);
-
-        let isNearTable = false;
-        this.tables.getChildren().forEach(table => {
-            if (Phaser.Math.Distance.Between(this.player.x, this.player.y, table.x, table.y) < 65) isNearTable = true;
-        });
-
-        if (isNearTable !== this.canDrink) {
-            this.canDrink = isNearTable;
-            if (this.canDrink) this.actionBtn.classList.add('active');
-            else this.actionBtn.classList.remove('active');
-        }
-    }
-}
-
-const config = {
-    type: Phaser.AUTO, 
-    width: '100%', 
-    height: '100%',
-    parent: 'game-container',
-    physics: { default: 'arcade', arcade: { gravity: { y: 0 } } },
-    scene: [MainScene]
-};
-gameInstance = new Phaser.Game(config);
-</script>
-
+        loop();
+    </script>
 </body>
 </html>

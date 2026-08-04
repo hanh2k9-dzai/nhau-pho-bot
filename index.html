@@ -15,7 +15,6 @@
             touch-action: none;
         }
         
-        /* Giao diện Menu trên cùng */
         #top-ui {
             position: absolute; top: 0; left: 0; width: 100%;
             height: 50px; background-color: rgba(44, 62, 80, 0.95);
@@ -34,7 +33,6 @@
         }
         .menu-btn:active { background-color: #1c5980; }
 
-        /* Bảng Shop thời trang (Ẩn/Hiện) */
         #shop-modal {
             position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 400px; background: rgba(0, 0, 0, 0.9);
@@ -56,10 +54,8 @@
             padding: 8px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 5px;
         }
 
-        /* Container Game */
         #game-container { width: 100%; height: 62vh; position: relative; }
 
-        /* Cụm điều khiển Mobile */
         #controls-container {
             width: 100%; height: 38vh;
             background-color: #2c3e50;
@@ -87,13 +83,12 @@
 </head>
 <body>
 
-<!-- Menu trên -->
 <div id="top-ui">
     <div class="user-info">
         <div class="user-avatar"></div>
         <div>
             <div style="font-size: 13px;">Bợm Nhậu</div>
-            <div id="coin-display" style="color: #f1c40f; font-size: 11px;">💰 Xu: 0</div>
+            <div id="coin-display" style="color: #f1c40f; font-size: 11px;">💰 Xu: 50</div>
         </div>
     </div>
     <div class="menu-buttons">
@@ -103,11 +98,10 @@
     </div>
 </div>
 
-<!-- Giao diện Shop Mua Đồ (Phong cách Avatar) -->
 <div id="shop-modal">
     <h3>🛍️ Tiệm Thời Trang Phố Nhậu</h3>
     <div class="shop-item">
-        <span>👕 Áo Ba Sọc (Huyền thoại) - 50 Xu</span>
+        <span>👕 Áo Ba Sọc - 50 Xu</span>
         <button onclick="buyItem('shirt_striped', 50)">Mua</button>
     </div>
     <div class="shop-item">
@@ -146,49 +140,48 @@ function buyItem(itemType, cost) {
 }
 
 class MainScene extends Phaser.Scene {
-    constructor() { super('MainScene'); this.coins = 50; this.canDrink = false; this.currentShirt = 0.xe67e22; }
+    constructor() { 
+        super('MainScene'); 
+        this.coins = 50; 
+        this.canDrink = false; 
+    }
 
     preload() {
-        // Tạo texture nhân vật với các kiểu áo khác nhau
         const createChar = (key, shirtCol) => {
             let g = this.make.graphics({ add: false });
-            g.fillStyle(0xffcc99); g.fillRect(8, 0, 16, 14); // Đầu
-            g.fillStyle(0x2c3e50); g.fillRect(8, 0, 16, 4);  // Tóc mặc định
-            g.fillStyle(0x000000); g.fillRect(11, 6, 3, 3); g.fillRect(18, 6, 3, 3); // Mắt
-            g.fillStyle(shirtCol); g.fillRect(6, 14, 20, 16); // Áo
-            g.fillStyle(0xffcc99); g.fillRect(2, 14, 4, 10); g.fillRect(26, 14, 4, 10); // Tay
-            g.fillStyle(0x111111); g.fillRect(6, 30, 8, 10); g.fillRect(18, 30, 8, 10); // Quần
+            g.fillStyle(0xffcc99); g.fillRect(8, 0, 16, 14); 
+            g.fillStyle(0x2c3e50); g.fillRect(8, 0, 16, 4);  
+            g.fillStyle(0x000000); g.fillRect(11, 6, 3, 3); g.fillRect(18, 6, 3, 3); 
+            g.fillStyle(shirtCol); g.fillRect(6, 14, 20, 16); 
+            g.fillStyle(0xffcc99); g.fillRect(2, 14, 4, 10); g.fillRect(26, 14, 4, 10); 
+            g.fillStyle(0x111111); g.fillRect(6, 30, 8, 10); g.fillRect(18, 30, 8, 10); 
             g.generateTexture(key, 32, 40);
         };
 
-        createChar('player_default', 0xe67e22); // Áo cam
-        createChar('player_striped', 0x3498db); // Áo xanh ba sọc giả lập
-        createChar('npc_1', 0x9b59b6);        // NPC tím
-        createChar('npc_2', 0x1abc9c);        // NPC xanh ngọc
+        createChar('player_default', 0xe67e22); 
+        createChar('player_striped', 0x3498db); 
+        createChar('npc_1', 0x9b59b6);        
+        createChar('npc_2', 0x1abc9c);        
 
-        // Địa hình và Bàn ghế quán nhậu vỉa hè
         let g = this.make.graphics({ add: false });
         g.fillStyle(0x34495e); g.fillRect(0, 0, 32, 32); 
         g.lineStyle(1, 0x2c3e50); g.strokeRect(0, 0, 32, 32);
         g.generateTexture('ground', 32, 32);
 
         g.clear();
-        g.fillStyle(0x8b4513); g.fillRect(10, 0, 40, 30); // Bàn gỗ
-        g.fillStyle(0xd35400); g.fillRect(0, 5, 8, 20); g.fillRect(52, 5, 8, 20); // Ghế
-        // Thêm chai bia nhỏ trên bàn cho có khí thế
+        g.fillStyle(0x8b4513); g.fillRect(10, 0, 40, 30); 
+        g.fillStyle(0xd35400); g.fillRect(0, 5, 8, 20); g.fillRect(52, 5, 8, 20); 
         g.fillStyle(0x27ae60); g.fillRect(20, 8, 4, 10); g.fillRect(36, 8, 4, 10);
         g.generateTexture('table', 60, 30);
     }
 
     create() {
-        // Vẽ bản đồ rộng 1200x900 (Đậm chất khu phố)
         for (let x = 0; x < 1200; x += 32) {
             for (let y = 0; y < 900; y += 32) { 
                 this.add.image(x + 16, y + 16, 'ground'); 
             }
         }
 
-        // Tạo khu vực bàn nhậu và các NPC đa dạng
         this.tables = this.physics.add.staticGroup();
         this.npcs = this.physics.add.group();
 
@@ -211,18 +204,15 @@ class MainScene extends Phaser.Scene {
         spawnTable(600, 200, 'npc_2', ["Quán này mồi ngon phết!", "Hôm nay say không về!", "Vô ông giáo ơi!"]);
         spawnTable(400, 500, 'npc_1', ["Nâng ly chào đoàn kết!", "Ai bỏ cuộc là người đó yếu sinh lý!"]);
 
-        // Nhân vật chính
         this.player = this.physics.add.sprite(300, 300, 'player_default');
         this.player.setCollideWorldBounds(true);
         this.physics.add.collider(this.player, this.tables);
         this.physics.add.collider(this.player, this.npcs);
 
-        // Cài đặt Camera cho bản đồ rộng
         this.cameras.main.setBounds(0, 0, 1200, 900);
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setZoom(1.3);
 
-        // Phím điều khiển
         window.moveState = { left: false, right: false, up: false, down: false };
         this.setupMobileControls();
 
@@ -231,7 +221,6 @@ class MainScene extends Phaser.Scene {
         this.actionBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.doNhau(); });
         this.cursors = this.input.keyboard.createCursorKeys();
         
-        // Cập nhật hiển thị Xu ban đầu
         document.getElementById('coin-display').innerText = '💰 Xu: ' + this.coins;
     }
 
@@ -297,7 +286,6 @@ class MainScene extends Phaser.Scene {
 
         this.player.setVelocity(vx, vy);
 
-        // Kiểm tra khoảng cách tới bàn nhậu
         let isNearTable = false;
         this.tables.getChildren().forEach(table => {
             if (Phaser.Math.Distance.Between(this.player.x, this.player.y, table.x, table.y) < 65) isNearTable = true;

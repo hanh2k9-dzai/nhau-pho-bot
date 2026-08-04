@@ -5,74 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nhậu Phố Simulator 2D</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #111; font-family: sans-serif; color: white; }
 
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
-        canvas { display: block; width: 100%; height: 100%; }
+        canvas { display: block; width: 100vw; height: 100vh; }
 
-        /* UI MENU */
+        /* MENU UI */
         #menu-screen {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 100;
         }
-        #menu-screen h1 { font-size: 36px; color: #f1c40f; margin-bottom: 10px; text-shadow: 0 0 10px #000; }
+        #menu-screen h1 { font-size: 34px; color: #f1c40f; margin-bottom: 15px; text-shadow: 0 0 10px #000; }
         .menu-btn {
-            width: 200px; padding: 12px; margin: 8px; border: none; border-radius: 20px;
-            font-size: 16px; font-weight: bold; color: white; cursor: pointer;
+            width: 200px; padding: 14px; margin: 8px; border: none; border-radius: 25px;
+            font-size: 16px; font-weight: bold; color: white; cursor: pointer; background: #e74c3c;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        #btn-start { background: #e74c3c; }
-        #btn-guide { background: #3498db; }
 
-        /* HUD MÁU UI */
+        /* HUD MÁU */
         #hud {
-            position: absolute; top: 10px; left: 10px; right: 10px;
+            position: absolute; top: 12px; left: 12px; right: 12px;
             display: none; justify-content: space-between; z-index: 50; pointer-events: none;
         }
-        .hp-box { background: rgba(0,0,0,0.7); padding: 8px; border-radius: 8px; width: 140px; border: 1px solid #555; }
+        .hp-box { background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px; width: 150px; border: 1px solid #555; }
         .hp-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-top: 4px; }
         .hp-fill { height: 100%; transition: width 0.1s; }
 
-        /* JOYSTICK & BUTTONS MOBILE */
+        /* JOYSTICK MOBILE */
         #joystick-zone {
-            position: absolute; bottom: 20px; left: 20px; width: 100px; height: 100px;
-            background: rgba(255,255,255,0.2); border-radius: 50%; z-index: 50; display: none;
+            position: absolute; bottom: 30px; left: 30px; width: 110px; height: 110px;
+            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 50%; z-index: 50; display: none;
         }
         #joystick-knob {
-            position: absolute; top: 35px; left: 35px; width: 30px; height: 30px;
-            background: #fff; border-radius: 50%; pointer-events: none;
+            position: absolute; top: 50%; left: 50%; width: 44px; height: 44px;
+            margin-top: -22px; margin-left: -22px; background: #ffffff; border-radius: 50%; pointer-events: none;
         }
+
+        /* NÚT CHIÊU MOBILE */
         .btn-act {
-            position: absolute; width: 60px; height: 60px; border-radius: 50%; border: none;
+            position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4);
             color: white; font-weight: bold; z-index: 50; display: none; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        #btn-atk { bottom: 20px; right: 20px; background: #e74c3c; width: 70px; height: 70px; }
-        #btn-def { bottom: 100px; right: 20px; background: #3498db; }
-        #btn-s1 { bottom: 20px; right: 100px; background: #f1c40f; color: #000; }
-        #btn-s2 { bottom: 90px; right: 90px; background: #9b59b6; }
+        .btn-act:active { transform: scale(0.9); }
+        #btn-atk { bottom: 30px; right: 30px; background: #e74c3c; width: 75px; height: 75px; font-size: 16px; }
+        #btn-def { bottom: 120px; right: 25px; background: #3498db; width: 55px; height: 55px; font-size: 13px; }
+        #btn-s1 { bottom: 30px; right: 120px; background: #f1c40f; color: #000; width: 55px; height: 55px; font-size: 13px; }
+        #btn-s2 { bottom: 95px; right: 90px; background: #9b59b6; width: 55px; height: 55px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <div id="canvas-container">
-        <canvas id="gameCanvas"></canvas>
-    </div>
+    <canvas id="gameCanvas"></canvas>
 
     <!-- MENU -->
     <div id="menu-screen">
         <h1>🍻 NHẬU PHỐ 2D</h1>
-        <button class="menu-btn" id="btn-start" onclick="startGame()">🚀 VÀO CHIẾN NAY</button>
+        <button class="menu-btn" onclick="startGame()">🚀 VÀO CHIẾN NAY</button>
     </div>
 
     <!-- HUD THANH MÁU -->
     <div id="hud">
         <div class="hp-box">
-            <div style="font-size:12px;">🧑 BẠN</div>
+            <div style="font-size:11px; font-weight:bold;">🧑 BẠN</div>
             <div class="hp-bar"><div id="p-hp" class="hp-fill" style="background:#2ecc71; width:100%;"></div></div>
         </div>
         <div class="hp-box" style="text-align:right;">
-            <div style="font-size:12px;">😈 CÔN ĐỒ</div>
+            <div style="font-size:11px; font-weight:bold;">😈 CÔN ĐỒ</div>
             <div class="hp-bar"><div id="e-hp" class="hp-fill" style="background:#e74c3c; width:100%;"></div></div>
         </div>
     </div>
@@ -99,14 +100,15 @@
 
         // ĐỐI TƯỢNG BẠN
         let player = {
-            x: 100, y: 100, r: 25, speed: 4,
-            hp: 220, maxHp: 220, vx: 0, vy: 0,
+            x: 100, y: 100, r: 25, speed: 4.5,
+            hp: 220, maxHp: 220,
+            vx: 0, vy: 0,
             state: "IDLE", timer: 0
         };
 
-        // ĐỐI TƯỢNG CÔN ĐỒ (SPAWN NGAY TỪ ĐẦU)
+        // ĐỐI TƯỢNG CÔN ĐỒ
         let enemy = {
-            x: 300, y: 300, r: 28, speed: 2,
+            x: 300, y: 300, r: 28, speed: 2.2,
             hp: 100, maxHp: 100, cooldown: 0, hit: 0
         };
 
@@ -116,8 +118,8 @@
 
         function spawnEnemy() {
             enemy.hp = enemy.maxHp;
-            enemy.x = Math.random() * (canvas.width - 200) + 100;
-            enemy.y = Math.random() * (canvas.height - 200) + 100;
+            enemy.x = canvas.width * 0.75;
+            enemy.y = canvas.height / 2;
         }
 
         function startGame() {
@@ -125,18 +127,19 @@
             document.getElementById("menu-screen").style.display = "none";
             document.getElementById("hud").style.display = "flex";
 
-            player.x = canvas.width / 3;
+            player.x = canvas.width / 4;
             player.y = canvas.height / 2;
             player.hp = player.maxHp;
 
             spawnEnemy();
 
-            if ('ontouchstart' in window) {
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
                 document.getElementById("joystick-zone").style.display = "block";
                 document.querySelectorAll(".btn-act").forEach(b => b.style.display = "flex");
             }
         }
 
+        // BÀN PHÍM PC
         window.addEventListener("keydown", e => {
             keys[e.key.toLowerCase()] = true;
             if(!inGame) return;
@@ -154,12 +157,12 @@
             if(type === "PUNCH") {
                 player.state = "ATK";
                 let d = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-                if(d < 70) hitEnemy(Math.floor(Math.random()*6) + 15);
+                if(d < 75) hitEnemy(Math.floor(Math.random()*6) + 15);
             } else if(type === "DEFEND") {
                 player.state = "DEF";
             } else if(type === "THROW") {
                 let a = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-                fxList.push({type: "BOTTLE", x: player.x, y: player.y, vx: Math.cos(a)*10, vy: Math.sin(a)*10, life: 30});
+                fxList.push({type: "BOTTLE", x: player.x, y: player.y, vx: Math.cos(a)*11, vy: Math.sin(a)*11, life: 35});
             } else if(type === "SPIN") {
                 fxList.push({type: "SPIN", x: player.x, y: player.y, r: 10, life: 15});
                 let d = Math.hypot(player.x - enemy.x, player.y - enemy.y);
@@ -174,22 +177,70 @@
             if(enemy.hp <= 0) spawnEnemy();
         }
 
-        // BẮT NÚT MOBILE
+        // ĐIỀU KHIỂN JOYSTICK MOBILE
+        const zone = document.getElementById("joystick-zone");
+        const knob = document.getElementById("joystick-knob");
+        let activeTouchId = null;
+
+        zone.addEventListener("touchstart", (e) => {
+            e.preventDefault(); const touch = e.changedTouches[0];
+            activeTouchId = touch.identifier; moveKnob(touch);
+        }, { passive: false });
+
+        window.addEventListener("touchmove", (e) => {
+            if (activeTouchId === null) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === activeTouchId) { moveKnob(e.changedTouches[i]); break; }
+            }
+        }, { passive: false });
+
+        const stopKnob = (e) => {
+            if (activeTouchId === null) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === activeTouchId) {
+                    activeTouchId = null; knob.style.transform = `translate(0px, 0px)`;
+                    player.vx = 0; player.vy = 0; break;
+                }
+            }
+        };
+        window.addEventListener("touchend", stopKnob); window.addEventListener("touchcancel", stopKnob);
+
+        function moveKnob(touch) {
+            const rect = zone.getBoundingClientRect();
+            let dx = touch.clientX - (rect.left + rect.width / 2);
+            let dy = touch.clientY - (rect.top + rect.height / 2);
+            let dist = Math.hypot(dx, dy); let maxR = 40;
+            if (dist > maxR) { dx = (dx / dist) * maxR; dy = (dy / dist) * maxR; }
+            knob.style.transform = `translate(${dx}px, ${dy}px)`;
+            player.vx = (dx / maxR) * player.speed; player.vy = (dy / maxR) * player.speed;
+        }
+
+        // BẮT NÚT CHIÊU MOBILE
         function bind(id, type) {
             let b = document.getElementById(id);
-            if(b) b.onclick = () => doAttack(type);
+            if(b) {
+                b.addEventListener("touchstart", (e) => { e.preventDefault(); doAttack(type); }, { passive: false });
+                b.onclick = () => doAttack(type);
+            }
         }
         bind("btn-atk", "PUNCH"); bind("btn-def", "DEFEND");
         bind("btn-s1", "THROW"); bind("btn-s2", "SPIN");
 
-        // GAME LOOP (LUÔN CHẠY ĐỂ VẼ MÀN HÌNH)
+        // CẬP NHẬT GAME
         function update() {
             if(inGame) {
-                // Di chuyển Bạn
+                // Di chuyển bằng Phím (PC)
                 if(keys['w'] || keys['arrowup']) player.y -= player.speed;
                 if(keys['s'] || keys['arrowdown']) player.y += player.speed;
                 if(keys['a'] || keys['arrowleft']) player.x -= player.speed;
                 if(keys['d'] || keys['arrowright']) player.x += player.speed;
+
+                // Di chuyển bằng Joystick (Mobile)
+                player.x += player.vx; player.y += player.vy;
+
+                // Giới hạn màn hình
+                player.x = Math.max(25, Math.min(canvas.width - 25, player.x));
+                player.y = Math.max(25, Math.min(canvas.height - 25, player.y));
 
                 if(player.timer > 0) {
                     player.timer--;
@@ -201,12 +252,12 @@
                 let edy = player.y - enemy.y;
                 let edist = Math.hypot(edx, edy);
 
-                if(edist > 40) {
+                if(edist > 42) {
                     enemy.x += (edx / edist) * enemy.speed;
                     enemy.y += (edy / edist) * enemy.speed;
                 } else {
                     if(enemy.cooldown <= 0) {
-                        let dmg = Math.floor(Math.random()*5) + 10;
+                        let dmg = Math.floor(Math.random()*5) + 11;
                         if(player.state === "DEF") dmg = Math.floor(dmg * 0.2);
                         player.hp -= dmg;
                         dmgTexts.push({x: player.x, y: player.y - 30, text: "-" + dmg, life: 25, color: player.state === "DEF" ? "#3498db" : "#ff4d4d"});
@@ -222,14 +273,14 @@
                     fx.life--;
                     if(fx.type === "BOTTLE") {
                         fx.x += fx.vx; fx.y += fx.vy;
-                        if(Math.hypot(fx.x - enemy.x, fx.y - enemy.y) < 30) {
+                        if(Math.hypot(fx.x - enemy.x, fx.y - enemy.y) < 32) {
                             hitEnemy(18); fx.life = 0;
                         }
                     }
                     if(fx.life <= 0) fxList.splice(i, 1);
                 });
 
-                // Cập nhật UI
+                // Cập nhật Thanh máu UI
                 document.getElementById("p-hp").style.width = Math.max(0, (player.hp/player.maxHp)*100) + "%";
                 document.getElementById("e-hp").style.width = Math.max(0, (enemy.hp/enemy.maxHp)*100) + "%";
             }
@@ -240,25 +291,24 @@
             });
         }
 
+        // VẼ MÀN HÌNH
         function draw() {
-            // Nền quán nhậu
             ctx.fillStyle = "#221c19";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Bàn nhậu trang trí
             ctx.fillStyle = "#4a3328";
-            ctx.beginPath(); ctx.arc(150, 150, 50, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(140, 140, 45, 0, Math.PI*2); ctx.fill();
 
-            // VẼ CÔN ĐỒ (MÀU ĐỎ ĐẬM + TÊN RÕ RÀNG)
+            // VẼ CÔN ĐỒ
             ctx.fillStyle = enemy.hit > 0 ? "#ffffff" : "#d63031";
             ctx.beginPath(); ctx.arc(enemy.x, enemy.y, enemy.r, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = "#ff7675"; ctx.lineWidth = 3; ctx.stroke();
 
-            // Tên Côn đồ
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("😈 CÔN ĐỒ", enemy.x, enemy.y - 35);
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("😈 CÔN ĐỒ", enemy.x, enemy.y - 36);
 
-            // VẼ NHÂN VẬT BẠN
+            // VẼ BẠN
             if(inGame) {
                 ctx.fillStyle = player.state === "ATK" ? "#e67e22" : "#0984e3";
                 ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
@@ -268,21 +318,21 @@
                     ctx.beginPath(); ctx.arc(player.x, player.y, player.r + 6, 0, Math.PI*2); ctx.stroke();
                 }
 
-                ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px sans-serif";
-                ctx.fillText("🧑 BẠN", player.x, player.y - 32);
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif";
+                ctx.fillText("🧑 BẠN", player.x, player.y - 33);
             }
 
-            // Vẽ Chiêu thức
+            // FX Chiêu thức
             fxList.forEach(fx => {
                 if(fx.type === "BOTTLE") {
                     ctx.fillStyle = "#2ecc71"; ctx.fillRect(fx.x - 6, fx.y - 6, 12, 12);
                 } else if(fx.type === "SPIN") {
                     ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 4;
-                    ctx.beginPath(); ctx.arc(fx.x, fx.y, 60, 0, Math.PI*2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(fx.x, fx.y, 65, 0, Math.PI*2); ctx.stroke();
                 }
             });
 
-            // Text Sát thương
+            // Damage Text
             dmgTexts.forEach(d => {
                 ctx.fillStyle = d.color; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
                 ctx.fillText(d.text, d.x, d.y);

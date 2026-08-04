@@ -15,16 +15,14 @@
             width: 110px; height: 110px;
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            z-index: 99;
+            border-radius: 50%; z-index: 99;
         }
         #joystick-knob {
             position: absolute; top: 50%; left: 50%;
             width: 45px; height: 45px;
             margin-top: -22.5px; margin-left: -22.5px;
             background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
             pointer-events: none;
         }
 
@@ -65,18 +63,32 @@
         resize();
         window.addEventListener("resize", resize);
 
+        // --- NẠP AN TOÀN SPRITE NHÂN VẬT ---
+        let imgIdleLoaded = false;
+        let imgFightLoaded = false;
+
+        const imgIdle = new Image();
+        imgIdle.onload = () => { imgIdleLoaded = true; };
+        imgIdle.onerror = () => { imgIdleLoaded = false; };
+        imgIdle.src = "./char_a_p1_1out_pfpn_v01.png"; // Đường dẫn tương đối chuẩn
+
+        const imgFight = new Image();
+        imgFight.onload = () => { imgFightLoaded = true; };
+        imgFight.onerror = () => { imgFightLoaded = false; };
+        imgFight.src = "./char_a_p1_1out_fstr_v01.png"; // Đường dẫn tương đối chuẩn
+
         // Nhân Vật
         let player = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
-            radius: 30, speed: 5,
+            size: 80, speed: 5,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
 
         let fxList = [];
 
-        // JOYSTICK TOUCH HANDLER (100% Hoạt động)
+        // JOYSTICK
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
         let activeTouchId = null;
@@ -164,8 +176,8 @@
             player.x += player.vx;
             player.y += player.vy;
 
-            player.x = Math.max(35, Math.min(canvas.width - 35, player.x));
-            player.y = Math.max(35, Math.min(canvas.height - 35, player.y));
+            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
+            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
 
             if (player.actionTimer > 0) {
                 player.actionTimer--;
@@ -201,34 +213,43 @@
                 }
             });
 
-            // Vẽ Nhân Vật (Thuần Canvas)
-            ctx.save();
-            ctx.translate(player.x, player.y);
+            // VẼ NHÂN VẬT (Dùng Sprite nếu đã load, không thì dùng Fallback)
+            let isFighting = (player.state !== "IDLE");
+            let targetImg = isFighting ? imgFight : imgIdle;
+            let isLoaded = isFighting ? imgFightLoaded : imgIdleLoaded;
 
-            // Thân
-            ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#2ecc71";
-            ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
-
-            // Mắt
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath(); ctx.arc(-8, -8, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(8, -8, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#000000";
-            ctx.beginPath(); ctx.arc(-7, -8, 2, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(9, -8, 2, 0, Math.PI * 2); ctx.fill();
-
-            // Giáp Thủ
-            if (player.state === "DEFEND") {
-                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 6;
-                ctx.beginPath(); ctx.arc(0, 0, player.radius + 8, 0, Math.PI * 2); ctx.stroke();
+            if (isLoaded) {
+                // Tự động scale ảnh về kích thước chuẩn 80x80
+                ctx.drawImage(
+                    targetImg, 
+                    player.x - player.size / 2, 
+                    player.y - player.size / 2, 
+                    player.size, 
+                    player.size
+                );
+            } else {
+                // Fallback nếu ảnh chưa tải xong hoặc sai tên
+                drawFallbackPlayer();
             }
 
-            ctx.restore();
+            // Giáp Phòng Thủ
+            if (player.state === "DEFEND") {
+                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 6;
+                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2 + 8, 0, Math.PI * 2); ctx.stroke();
+            }
 
             // HUD Text
             ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
             ctx.fillText(player.actionTimer > 0 ? player.actionText : "KÉO CẦN GẠT ĐỂ DI CHUYỂN", canvas.width / 2, 40);
+        }
+
+        function drawFallbackPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#2ecc71";
+            ctx.beginPath(); ctx.arc(0, 0, player.size/2, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
+            ctx.restore();
         }
 
         function loop() {

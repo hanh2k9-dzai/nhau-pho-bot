@@ -44,7 +44,7 @@
         .modal-content ul { list-style: none; line-height: 1.8; font-size: 14px; margin-bottom: 20px; }
         .close-btn { width: 100%; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        /* HUD MÁU & CONTROLS */
+        /* HUD THANH MÁU GÓC MÀN HÌNH */
         #hud {
             position: absolute; top: 15px; left: 15px; right: 15px;
             display: flex; justify-content: space-between; z-index: 999;
@@ -65,7 +65,7 @@
             color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer;
         }
 
-        /* Joystick & Buttons (Mobile) */
+        /* Joystick & Nút bấm Mobile */
         #joystick-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 110px; height: 110px; background: rgba(255, 255, 255, 0.2);
@@ -105,7 +105,7 @@
             <div class="hp-bar-bg"><div id="player-hp-fill" class="hp-bar-fill" style="width: 100%;"></div></div>
         </div>
         <div class="hp-box" style="text-align: right;">
-            <div style="font-size: 11px; font-weight: bold;">😈 KẺ THÙ (HP: <span id="e-hp-text">100</span>/100)</div>
+            <div style="font-size: 11px; font-weight: bold;">😈 CÔN ĐỒ (HP: <span id="e-hp-text">100</span>/100)</div>
             <div class="hp-bar-bg"><div id="enemy-hp-fill" class="hp-bar-fill" style="width: 100%;"></div></div>
         </div>
     </div>
@@ -123,7 +123,7 @@
                     <br>- Xoay bàn (15-20 DMG): <b>Phím U</b>
                 </li>
                 <br>
-                <li>📱 <b>Điện thoại:</b> Dùng cần gạt & nút skill.</li>
+                <li>📱 <b>Điện thoại:</b> Dùng cần gạt & nút skill góc phải.</li>
             </ul>
             <button class="close-btn" onclick="toggleGuide(false)">ĐÃ HIỂU</button>
         </div>
@@ -151,24 +151,24 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // THÔNG SỐ NHÂN VẬT CHÍNH (220 MÁU)
+        // BẠN: 220 MÁU
         let player = {
-            x: 100, y: 100, size: 50, speed: 4,
+            x: 100, y: 100, size: 30, speed: 4,
             maxHp: 220, hp: 220,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
 
-        // THÔNG SỐ KẺ THÙ (100 MÁU)
+        // CÔN ĐỒ: 100 MÁU
         let enemy = {
-            x: 300, y: 300, size: 50, speed: 2,
+            x: 300, y: 300, size: 32, speed: 2.2,
             maxHp: 100, hp: 100,
             attackCooldown: 0, hitTimer: 0
         };
 
         let keys = {};
         let fxList = [];
-        let dmgTexts = []; // Hiển thị số sát thương văng ra
+        let dmgTexts = [];
 
         function resetGame() {
             player.hp = player.maxHp;
@@ -194,14 +194,13 @@
         }
 
         function getRandomDmg() {
-            return Math.floor(Math.random() * 6) + 15; // Ngẫu nhiên 15 - 20 sát thương
+            return Math.floor(Math.random() * 6) + 15; // 15 - 20 dame
         }
 
         function showDmgText(x, y, text, color = "#ff4d4d") {
             dmgTexts.push({ x, y, text, life: 30, color });
         }
 
-        // QUẢN LÝ GAME
         function startGame() {
             gameState = "PLAYING";
             resetGame();
@@ -242,22 +241,21 @@
         });
         window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
 
-        // TÁC VỤ KHI TỰA SKILL
+        // TÁC VỤ KHI ĐÁNH
         function doAction(type) {
-            if (player.actionTimer > 0) return; // Đang tung chiêu thì không bấm tiếp
+            if (player.actionTimer > 0) return;
             player.actionTimer = 18;
 
             if (type === "ATTACK") {
                 player.state = "ATTACK";
                 player.actionText = "👊 ĐẤM CÔN ĐỒ!";
                 
-                // Kiểm tra va chạm cận chiến
                 let dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-                if (dist < 75) {
+                if (dist < 80) {
                     let dmg = getRandomDmg();
                     enemy.hp -= dmg;
                     enemy.hitTimer = 10;
-                    showDmgText(enemy.x, enemy.y - 30, "-" + dmg);
+                    showDmgText(enemy.x, enemy.y - 35, "-" + dmg);
                 }
             } else if (type === "DEFEND") {
                 player.state = "DEFEND";
@@ -266,24 +264,23 @@
                 player.state = "SKILL";
                 player.actionText = "🍾 PHI CHAI BIA!";
                 let angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: Math.cos(angle)*10, vy: Math.sin(angle)*10, life: 40 });
+                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: Math.cos(angle)*11, vy: Math.sin(angle)*11, life: 40 });
             } else if (type === "XOAY_BAN") {
                 player.state = "SKILL";
                 player.actionText = "🪑 XOAY BÀN NHẬU!";
-                fxList.push({ type: "SPIN", x: player.x, y: player.y, r: 10, maxR: 80, life: 20 });
+                fxList.push({ type: "SPIN", x: player.x, y: player.y, r: 10, maxR: 85, life: 20 });
                 
                 let dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-                if (dist < 90) {
+                if (dist < 95) {
                     let dmg = getRandomDmg();
                     enemy.hp -= dmg;
                     enemy.hitTimer = 10;
-                    showDmgText(enemy.x, enemy.y - 30, "-" + dmg);
+                    showDmgText(enemy.x, enemy.y - 35, "-" + dmg);
                 }
             }
             updateHpUI();
         }
 
-        // BÍND NÚT BẤM MOBILE
         function bindBtn(id, type) {
             const btn = document.getElementById(id);
             if(btn) {
@@ -294,7 +291,7 @@
         bindBtn("btn-attack", "ATTACK"); bindBtn("btn-defend", "DEFEND");
         bindBtn("btn-skill1", "CHAI_BIA"); bindBtn("btn-skill2", "XOAY_BAN");
 
-        // JOYSTICK MOBILE
+        // JOYSTICK
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
         let activeTouchId = null;
@@ -336,7 +333,6 @@
         function update() {
             if (gameState !== "PLAYING") return;
 
-            // Di chuyển Player
             if (keys["w"] || keys["arrowup"]) player.y -= player.speed;
             if (keys["s"] || keys["arrowdown"]) player.y += player.speed;
             if (keys["a"] || keys["arrowleft"]) player.x -= player.speed;
@@ -351,26 +347,25 @@
                 if (player.actionTimer === 0) player.state = "IDLE";
             }
 
-            // Kẻ thù di chuyển đuổi theo Player
+            // Côn đồ đuổi theo đánh Bạn
             let edx = player.x - enemy.x;
             let edy = player.y - enemy.y;
             let edist = Math.hypot(edx, edy);
 
-            if (edist > 40) {
+            if (edist > 45) {
                 enemy.x += (edx / edist) * enemy.speed;
                 enemy.y += (edy / edist) * enemy.speed;
             } else {
-                // Kẻ thù tấn công Player
                 if (enemy.attackCooldown <= 0) {
-                    let enemyDmg = Math.floor(Math.random() * 5) + 10; // Kẻ thù gây 10-14 sát thương
+                    let enemyDmg = Math.floor(Math.random() * 5) + 12;
                     if (player.state === "DEFEND") {
-                        enemyDmg = Math.floor(enemyDmg * 0.2); // Thủ giảm 80% dame
-                        showDmgText(player.x, player.y - 30, "ĐÃ THỦ! -" + enemyDmg, "#3498db");
+                        enemyDmg = Math.floor(enemyDmg * 0.2);
+                        showDmgText(player.x, player.y - 35, "ĐÃ THỦ! -" + enemyDmg, "#3498db");
                     } else {
-                        showDmgText(player.x, player.y - 30, "-" + enemyDmg, "#ff4d4d");
+                        showDmgText(player.x, player.y - 35, "-" + enemyDmg, "#ff4d4d");
                     }
                     player.hp -= enemyDmg;
-                    enemy.attackCooldown = 50; // Giây chờ đòn tiếp
+                    enemy.attackCooldown = 45;
                     updateHpUI();
 
                     if (player.hp <= 0) {
@@ -383,19 +378,17 @@
             if (enemy.attackCooldown > 0) enemy.attackCooldown--;
             if (enemy.hitTimer > 0) enemy.hitTimer--;
 
-            // Xử lý hiệu ứng & Sát thương Đạn/Skill
             fxList.forEach((fx, i) => {
                 fx.life--;
                 if (fx.type === "BOTTLE") {
                     fx.x += fx.vx; fx.y += fx.vy;
-                    // Kiểm tra chai va chạm kẻ thù
                     let bDist = Math.hypot(fx.x - enemy.x, fx.y - enemy.y);
                     if (bDist < 35) {
                         let dmg = getRandomDmg();
                         enemy.hp -= dmg;
                         enemy.hitTimer = 10;
-                        showDmgText(enemy.x, enemy.y - 30, "-" + dmg);
-                        fx.life = 0; // Biến mất chai
+                        showDmgText(enemy.x, enemy.y - 35, "-" + dmg);
+                        fx.life = 0;
                         updateHpUI();
                     }
                 }
@@ -403,13 +396,11 @@
                 if (fx.life <= 0) fxList.splice(i, 1);
             });
 
-            // Xử lý chữ văng số sát thương
             dmgTexts.forEach((dt, i) => {
                 dt.y -= 1; dt.life--;
                 if (dt.life <= 0) dmgTexts.splice(i, 1);
             });
 
-            // Kiểm tra Kẻ thù chết -> Hồi sinh kẻ thù mới
             if (enemy.hp <= 0) {
                 showDmgText(enemy.x, enemy.y - 50, "☠️ ĐÃ HẠ GỤC!", "#f1c40f");
                 spawnEnemy();
@@ -417,11 +408,11 @@
             }
         }
 
-        // VẼ KHUNG HÌNH (GRAPHICS)
+        // VẼ ĐỒ HỌA
         function draw() {
             if (gameState !== "PLAYING") return;
 
-            // Sàn nhà
+            // Nền sàn nhà
             ctx.fillStyle = "#2c221e";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -429,7 +420,7 @@
             ctx.fillStyle = "#5c4033";
             ctx.beginPath(); ctx.arc(120, 140, 45, 0, Math.PI*2); ctx.fill();
 
-            // Hiệu ứng Chiêu thức
+            // Hiệu ứng skill
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
                     ctx.save(); ctx.translate(fx.x, fx.y);
@@ -441,36 +432,42 @@
                 }
             });
 
-            // VẼ KẺ THÙ (MÀU ĐỎ/TÍM)
+            // 😈 VẼ CÔN ĐỒ (MÀU ĐỎ/TÍM + MẶT QUỶ)
             ctx.save();
             ctx.translate(enemy.x, enemy.y);
-            ctx.fillStyle = enemy.hitTimer > 0 ? "#ffffff" : "#9b59b6";
-            ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("CÔN ĐỒ", 0, -32);
+            ctx.fillStyle = enemy.hitTimer > 0 ? "#ffffff" : "#c0392b";
+            ctx.beginPath(); ctx.arc(0, 0, enemy.size, 0, Math.PI * 2); ctx.fill();
+
+            // Thanh máu nhỏ trên đầu Côn đồ
+            ctx.fillStyle = "#000"; ctx.fillRect(-25, -45, 50, 6);
+            ctx.fillStyle = "#e74c3c"; ctx.fillRect(-25, -45, (Math.max(0, enemy.hp) / enemy.maxHp) * 50, 6);
+
+            // Icon & Tên
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("😈 CÔN ĐỒ", 0, -53);
             ctx.restore();
 
-            // VẼ NHÂN VẬT CHÍNH (MÀU CAM)
+            // 🧑 VẼ NHÂN VẬT BẠN (MÀU CAM)
             ctx.save();
             ctx.translate(player.x, player.y);
-            ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#e67e22";
-            ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = player.state === "ATTACK" ? "#e67e22" : "#3498db";
+            ctx.beginPath(); ctx.arc(0, 0, player.size, 0, Math.PI * 2); ctx.fill();
 
             if (player.state === "DEFEND") {
-                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 5;
-                ctx.beginPath(); ctx.arc(0, 0, 33, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = "#2ecc71"; ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.arc(0, 0, player.size + 8, 0, Math.PI * 2); ctx.stroke();
             }
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("BẠN", 0, -32);
+
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("🧑 BẠN", 0, -38);
             ctx.restore();
 
-            // VẼ CHỮ SÁT THƯƠNG (DAMAGE TEXTS)
+            // VẼ CHỮ SÁT THƯƠNG
             dmgTexts.forEach(dt => {
                 ctx.fillStyle = dt.color; ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center";
                 ctx.fillText(dt.text, dt.x, dt.y);
             });
 
-            // Hiển thị trạng thái/kỹ năng
             ctx.fillStyle = "#f1c40f"; ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
             if (player.actionTimer > 0) ctx.fillText(player.actionText, canvas.width / 2, 40);
         }

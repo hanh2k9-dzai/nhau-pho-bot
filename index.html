@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Simulator 2D - Auto Zip Loader</title>
-    <!-- THƯ VIỆN ĐỌC FILE ZIP TRỰC TIẾP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <title>Nhậu Phố Simulator 2D</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1615; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
@@ -89,7 +87,7 @@
     <div id="menu-screen">
         <h1>🍻 NHẬU PHỐ 2D</h1>
         <p class="subtitle">Game Web Đại Chiến Quán Nhậu</p>
-        <p id="loading-status">⏳ Đang giải nén file ZIP tài nguyên...</p>
+        <p id="loading-status">⏳ Đang nạp hình ảnh nhân vật...</p>
         <button class="menu-btn" id="btn-start">🚀 BẮT ĐẦU CHƠI</button>
         <button class="menu-btn" id="btn-guide">📖 HƯỚNG DẪN</button>
     </div>
@@ -138,50 +136,42 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // ĐỌC FILE ZIP VÀ TẢI TÀI NGUYÊN
+        // NẠP ẢNH TRỰC TIẾP TỪ THƯ MỤC skinnvat
         const imgIdle = new Image();
         const imgFight = new Image();
         let idleLoaded = false;
         let fightLoaded = false;
 
-        async function loadAssetsFromZip() {
-            try {
-                // 1. Đọc file ZIP từ GitHub (Tên file zip đúng trong repo của bạn)
-                const response = await fetch('nhau_pho_bot.zip');
-                if (!response.ok) throw new Error("Không thấy file nhau_pho_bot.zip");
-                
-                const zipBuffer = await response.arrayBuffer();
-                const zip = await JSZip.loadAsync(zipBuffer);
+        function loadAssetsDirect() {
+            // Đường dẫn trực tiếp đến các file PNG trong thư mục skinnvat
+            imgIdle.src = './skinnvat/char_a_p1_1out_boxr_v01.png';
+            imgFight.src = './skinnvat/char_a_p1_1out_fstr_v01.png';
 
-                statusText.innerText = "⚡ Đang đọc ảnh từ file ZIP...";
+            imgIdle.onload = () => {
+                idleLoaded = true;
+                checkAllLoaded();
+            };
+            imgIdle.onerror = () => {
+                console.warn("Chưa tìm thấy ảnh IDLE trong thư mục skinnvat!");
+            };
 
-                // 2. Tìm file ảnh trong ZIP (Chỉnh đúng tên file nếu nằm trong thư mục con)
-                // Ví dụ: zip.file("char_a_p1_1out_pfpn_v01.png")
-                let fileIdle = zip.file(/char_a_p1_1out_pfpn_v01\.png$/i)[0];
-                let fileFight = zip.file(/char_a_p1_1out_fstr_v01\.png$/i)[0];
+            imgFight.onload = () => {
+                fightLoaded = true;
+                checkAllLoaded();
+            };
+            imgFight.onerror = () => {
+                console.warn("Chưa tìm thấy ảnh FIGHT trong thư mục skinnvat!");
+            };
+        }
 
-                if (fileIdle) {
-                    const blobIdle = await fileIdle.async("blob");
-                    imgIdle.src = URL.createObjectURL(blobIdle);
-                    imgIdle.onload = () => { idleLoaded = true; };
-                }
-
-                if (fileFight) {
-                    const blobFight = await fileFight.async("blob");
-                    imgFight.src = URL.createObjectURL(blobFight);
-                    imgFight.onload = () => { fightLoaded = true; };
-                }
-
-                statusText.innerText = "✅ Tải tài nguyên từ ZIP thành công!";
+        function checkAllLoaded() {
+            if (idleLoaded || fightLoaded) {
+                statusText.innerText = "✅ Tải nhân vật thành công!";
                 statusText.style.color = "#2ecc71";
-            } catch (err) {
-                console.warn("Lỗi load ZIP, game sẽ dùng chế độ vẽ dự phòng:", err);
-                statusText.innerText = "⚠️ Dùng nhân vật dự phòng (Không tìm thấy ZIP).";
-                statusText.style.color = "#e74c3c";
             }
         }
 
-        loadAssetsFromZip();
+        loadAssetsDirect();
 
         let animFrame = 0;
         let animTimer = 0;
@@ -379,7 +369,7 @@
                 }
             });
 
-            // VẼ NHÂN VẬT TỪ FILE ZIP
+            // VẼ NHÂN VẬT
             let activeImg = (player.state !== "IDLE") ? imgFight : imgIdle;
             let isReady = (player.state !== "IDLE") ? fightLoaded : idleLoaded;
 
@@ -401,7 +391,7 @@
                     ctx.drawImage(activeImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
                 }
             } else {
-                // Hình mẫu dự phòng nếu file ảnh chưa giải nén xong
+                // Hình mẫu dự phòng nếu chưa nạp xong ảnh
                 ctx.save();
                 ctx.translate(player.x, player.y);
                 ctx.fillStyle = "#e67e22"; ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2); ctx.fill();

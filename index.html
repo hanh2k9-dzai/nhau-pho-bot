@@ -87,7 +87,7 @@
     <div id="menu-screen">
         <h1>🍻 NHẬU PHỐ 2D</h1>
         <p class="subtitle">Game Web Đại Chiến Quán Nhậu</p>
-        <p id="loading-status">⏳ Đang tải bộ tài nguyên nhân vật...</p>
+        <p id="loading-status">⏳ Đang kết nối thư mục skinnvat...</p>
         <button class="menu-btn" id="btn-start">🚀 BẮT ĐẦU CHƠI</button>
         <button class="menu-btn" id="btn-guide">📖 HƯỚNG DẪN</button>
     </div>
@@ -136,35 +136,43 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // KHAI BÁO BỘ ẢNH TỪ FOLDER skinnvat
         const sprites = {
-            idle: new Image(),      // Đứng yên
-            walk: new Image(),      // Di chuyển
-            attack: new Image(),    // Đấm / Đánh
-            hurt: new Image()       // Trúng đòn
+            idle: new Image(),
+            walk: new Image(),
+            attack: new Image(),
+            hurt: new Image()
         };
 
         let loadedCount = 0;
-        const totalImages = 4;
-
-        function checkLoaded() {
+        function onImageLoad() {
             loadedCount++;
-            if (loadedCount >= 1) {
-                statusText.innerText = "✅ Tải ảnh từ folder skinnvat thành công!";
-                statusText.style.color = "#2ecc71";
-            }
+            statusText.innerText = `✅ Đã nhận diện hình ảnh nhân vật (${loadedCount})!`;
+            statusText.style.color = "#2ecc71";
         }
 
-        // Tải các file ảnh chính trong folder skinnvat của bạn
-        sprites.idle.src = './skinnvat/char_a_p1_1out_boxr_v01.png';
-        sprites.walk.src = './skinnvat/char_a_p1_1out_pfpn_v01.png';
-        sprites.attack.src = './skinnvat/char_a_p1_1out_fstr_v01.png';
-        sprites.hurt.src = './skinnvat/char_a_p1_1out_hurb_v01.png';
+        function onImageError(e) {
+            console.error("Lỗi tải ảnh:", e.target.src);
+            statusText.innerText = "⚠️ Đang tìm ảnh trong folder skinnvat...";
+        }
 
-        sprites.idle.onload = checkLoaded;
-        sprites.walk.onload = checkLoaded;
-        sprites.attack.onload = checkLoaded;
-        sprites.hurt.onload = checkLoaded;
+        // Tải ảnh trực tiếp từ folder skinnvat
+        sprites.idle.onload = onImageLoad;
+        sprites.walk.onload = onImageLoad;
+        sprites.attack.onload = onImageLoad;
+        sprites.hurt.onload = onImageLoad;
+
+        sprites.idle.onerror = onImageError;
+        sprites.walk.onerror = onImageError;
+        sprites.attack.onerror = onImageError;
+        sprites.hurt.onerror = onImageError;
+
+        // Thử tìm theo 2 đường dẫn tương đối để tránh lỗi sai vị trí thư mục
+        const basePath = window.location.pathname.includes('/skinnvat/') ? './' : 'skinnvat/';
+
+        sprites.idle.src = basePath + 'char_a_p1_1out_boxr_v01.png';
+        sprites.walk.src = basePath + 'char_a_p1_1out_pfpn_v01.png';
+        sprites.attack.src = basePath + 'char_a_p1_1out_fstr_v01.png';
+        sprites.hurt.src = basePath + 'char_a_p1_1out_hurb_v01.png';
 
         let animFrame = 0;
         let animTimer = 0;
@@ -172,7 +180,7 @@
         let player = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
-            size: 100, speed: 5,
+            size: 110, speed: 5,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
@@ -180,7 +188,6 @@
         let keys = {};
         let fxList = [];
 
-        // QUẢN LÝ MENU
         function startGame() {
             gameState = "PLAYING";
             document.getElementById("menu-screen").style.display = "none";
@@ -209,7 +216,6 @@
         document.getElementById("btn-start").onclick = startGame;
         document.getElementById("btn-guide").onclick = () => toggleGuide(true);
 
-        // BÀN PHÍM (PC)
         window.addEventListener("keydown", e => {
             keys[e.key.toLowerCase()] = true;
             if (gameState !== "PLAYING") return;
@@ -220,7 +226,7 @@
         });
         window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
 
-        // JOYSTICK (MOBILE)
+        // JOYSTICK
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
         let activeTouchId = null;
@@ -276,7 +282,6 @@
             player.vy = (dy / maxR) * player.speed;
         }
 
-        // SKILL ACTIONS
         function doAction(type) {
             player.actionTimer = 20;
             if (type === "ATTACK") {
@@ -305,7 +310,6 @@
         bindBtn("btn-skill1", "CHAI_BIA");
         bindBtn("btn-skill2", "XOAY_BAN");
 
-        // GAME LOOP
         function update() {
             if (gameState !== "PLAYING") return;
 
@@ -346,16 +350,13 @@
         function draw() {
             if (gameState !== "PLAYING") return;
 
-            // Sàn quán
             ctx.fillStyle = "#3a2e2b";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Bàn nhậu trang trí
             ctx.fillStyle = "#5c4033";
             ctx.beginPath(); ctx.arc(120, 140, 45, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(canvas.width - 120, 140, 45, 0, Math.PI*2); ctx.fill();
 
-            // Hiệu ứng skill
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
                     ctx.save();
@@ -369,7 +370,6 @@
                 }
             });
 
-            // LỰA CHỌN SPRITE ẢNH THEO TRẠNG THÁI
             let activeImg = sprites.idle;
             if (player.state === "WALK") activeImg = sprites.walk;
             if (player.state === "ATTACK" || player.state === "SKILL") activeImg = sprites.attack;
@@ -378,7 +378,6 @@
                 let frameWidth = activeImg.naturalWidth;
                 let frameHeight = activeImg.naturalHeight;
 
-                // Tự động cắt Spritesheet nếu ảnh chứa nhiều khung hình ghép lại
                 if (frameWidth > frameHeight) {
                     let totalCols = Math.floor(frameWidth / frameHeight);
                     let singleWidth = frameWidth / totalCols;
@@ -393,7 +392,6 @@
                     ctx.drawImage(activeImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
                 }
             } else {
-                // Hình tròn dự phòng nếu chưa có ảnh
                 ctx.save();
                 ctx.translate(player.x, player.y);
                 ctx.fillStyle = "#e67e22"; ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2); ctx.fill();

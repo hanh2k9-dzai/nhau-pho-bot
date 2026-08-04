@@ -38,18 +38,9 @@
         #btn-defend { bottom: 120px; right: 25px; width: 55px; height: 55px; background: #3498db; font-size: 13px; }
         #btn-skill1 { bottom: 30px; right: 120px; width: 55px; height: 55px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
         #btn-skill2 { bottom: 95px; right: 90px; width: 55px; height: 55px; background: #9b59b6; font-size: 13px; }
-
-        /* Mẹo ẩn ảnh trong HTML để ép trình duyệt load trước */
-        .hidden-assets { display: none; }
     </style>
 </head>
 <body>
-
-    <!-- Nạp sẵn ảnh vào DOM để tránh lỗi CORS / Load chậm trên Telegram -->
-    <div class="hidden-assets">
-        <img id="sprite-idle" src="char_a_p1_1out_pfpn_v01.png" crossorigin="anonymous">
-        <img id="sprite-fight" src="char_a_p1_1out_fstr_v01.png" crossorigin="anonymous">
-    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -72,15 +63,25 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // Lấy Element ảnh đã được nạp sẵn từ HTML
-        const imgIdle = document.getElementById("sprite-idle");
-        const imgFight = document.getElementById("sprite-fight");
+        // NẠP ẢNH BẰNG LINK TRỰC TIẾP (BYPASS LỖI TELEGRAM PATH)
+        let imgIdleLoaded = false;
+        let imgFightLoaded = false;
+
+        const imgIdle = new Image();
+        imgIdle.crossOrigin = "Anonymous";
+        imgIdle.onload = () => { imgIdleLoaded = true; };
+        imgIdle.src = "char_a_p1_1out_pfpn_v01.png?v=" + Date.now(); // Thêm timestamp để bypass Cache Telegram
+
+        const imgFight = new Image();
+        imgFight.crossOrigin = "Anonymous";
+        imgFight.onload = () => { imgFightLoaded = true; };
+        imgFight.src = "char_a_p1_1out_fstr_v01.png?v=" + Date.now();
 
         // Nhân Vật
         let player = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
-            size: 90, speed: 5,
+            size: 80, speed: 5,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
@@ -175,8 +176,8 @@
             player.x += player.vx;
             player.y += player.vy;
 
-            player.x = Math.max(45, Math.min(canvas.width - 45, player.x));
-            player.y = Math.max(45, Math.min(canvas.height - 45, player.y));
+            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
+            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
 
             if (player.actionTimer > 0) {
                 player.actionTimer--;
@@ -201,33 +202,33 @@
             ctx.beginPath(); ctx.arc(100, 100, 45, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(canvas.width - 100, 120, 45, 0, Math.PI*2); ctx.fill();
 
-            // Hiệu ứng Chiêu
+            // HIỆU ỨNG CHIÊU THỨC (VẼ CHAI BIA CHI TIẾT)
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
-                    ctx.fillStyle = "#2ecc71";
-                    ctx.beginPath(); ctx.arc(fx.x, fx.y, 8, 0, Math.PI * 2); ctx.fill();
+                    // Vẽ Chai bia xanh lá đẹp mắt thay vì hình tròn
+                    ctx.save();
+                    ctx.translate(fx.x, fx.y);
+                    ctx.fillStyle = "#27ae60";
+                    ctx.fillRect(-10, -4, 16, 8); // Thân chai
+                    ctx.fillStyle = "#f39c12";
+                    ctx.fillRect(6, -2, 6, 4);   // Cổ chai
+                    ctx.restore();
                 } else if (fx.type === "SPIN") {
                     ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 5;
                     ctx.beginPath(); ctx.arc(player.x, player.y, fx.r, 0, Math.PI * 2); ctx.stroke();
                 }
             });
 
-            // VẼ NHÂN VẬT TỪ ẢNH HTML
+            // VẼ NHÂN VẬT
             let isFighting = (player.state !== "IDLE");
             let targetImg = isFighting ? imgFight : imgIdle;
+            let isLoaded = isFighting ? imgFightLoaded : imgIdleLoaded;
 
-            if (targetImg.complete && targetImg.naturalWidth !== 0) {
-                ctx.drawImage(
-                    targetImg, 
-                    player.x - player.size / 2, 
-                    player.y - player.size / 2, 
-                    player.size, 
-                    player.size
-                );
+            if (isLoaded) {
+                ctx.drawImage(targetImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
             } else {
-                // Nếu ảnh tệp bị thiếu thực sự trên Github mới vẽ hình tròn
-                ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#2ecc71";
-                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2); ctx.fill();
+                // FALLBACK NHÂN VẬT CHI TIẾT (Không chơi tròn trơn lụi nữa!)
+                drawDetailedPlayer();
             }
 
             // Giáp Phòng Thủ
@@ -239,6 +240,32 @@
             // HUD Text
             ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
             ctx.fillText(player.actionTimer > 0 ? player.actionText : "KÉO CẦN GẠT ĐỂ DI CHUYỂN", canvas.width / 2, 40);
+        }
+
+        // Tự vẽ nhân vật hoạt hình bằng Canvas nếu chưa tải xong ảnh
+        function drawDetailedPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+
+            // Đầu
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#2c3e50"; ctx.lineWidth = 3; ctx.stroke();
+
+            // Mắt
+            ctx.fillStyle = "#2c3e50";
+            ctx.beginPath(); ctx.arc(-10, -5, 4, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(10, -5, 4, 0, Math.PI * 2); ctx.fill();
+
+            // Miệng (Thay đổi khi đánh)
+            if (player.state === "ATTACK") {
+                ctx.fillStyle = "#e74c3c";
+                ctx.beginPath(); ctx.arc(0, 10, 8, 0, Math.PI); ctx.fill();
+            } else {
+                ctx.beginPath(); ctx.arc(0, 8, 6, 0, Math.PI); ctx.stroke();
+            }
+
+            ctx.restore();
         }
 
         function loop() {

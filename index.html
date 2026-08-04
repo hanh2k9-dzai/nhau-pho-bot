@@ -3,34 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Mobile - Fixed Joystick</title>
+    <title>Nhậu Phố Mini App</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; background: #111; overflow: hidden; font-family: sans-serif; }
-        canvas { display: block; background: #2c221e; width: 100vw; height: 100vh; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #111; font-family: sans-serif; }
+        canvas { display: block; width: 100vw; height: 100vh; background: #2c221e; }
 
-        /* Joystick Vùng ngoài */
+        /* Joystick (Trái) */
         #joystick-zone {
-            position: absolute; bottom: 40px; left: 40px;
-            width: 120px; height: 120px;
+            position: absolute; bottom: 30px; left: 30px;
+            width: 110px; height: 110px;
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 50%;
             z-index: 99;
         }
-        /* Núm tròn di chuyển bên trong */
         #joystick-knob {
-            position: absolute; 
-            top: 50%; left: 50%;
-            width: 50px; height: 50px;
-            margin-top: -25px; margin-left: -25px;
+            position: absolute; top: 50%; left: 50%;
+            width: 45px; height: 45px;
+            margin-top: -22.5px; margin-left: -22.5px;
             background: rgba(255, 255, 255, 0.8);
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            pointer-events: none; /* Tránh cản trở cảm ứng */
+            pointer-events: none;
         }
 
-        /* Nút Chiêu Thức */
+        /* Nút Skill (Phải) */
         .action-btn {
             position: absolute; border-radius: 50%; border: none; color: white; font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
@@ -38,10 +36,10 @@
         }
         .action-btn:active { transform: scale(0.9); }
 
-        #btn-attack { bottom: 30px; right: 30px; width: 80px; height: 80px; background: #e74c3c; font-size: 18px; }
-        #btn-defend { bottom: 125px; right: 25px; width: 60px; height: 60px; background: #3498db; font-size: 14px; }
-        #btn-skill1 { bottom: 30px; right: 125px; width: 60px; height: 60px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
-        #btn-skill2 { bottom: 100px; right: 95px; width: 60px; height: 60px; background: #9b59b6; font-size: 13px; }
+        #btn-attack { bottom: 30px; right: 30px; width: 75px; height: 75px; background: #e74c3c; font-size: 16px; }
+        #btn-defend { bottom: 120px; right: 25px; width: 55px; height: 55px; background: #3498db; font-size: 13px; }
+        #btn-skill1 { bottom: 30px; right: 120px; width: 55px; height: 55px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
+        #btn-skill2 { bottom: 95px; right: 90px; width: 55px; height: 55px; background: #9b59b6; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -60,107 +58,94 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        function resizeCanvas() {
+        function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
+        resize();
+        window.addEventListener("resize", resize);
 
-        // 1. Nạp Ảnh An Toàn
-        let imgIdleLoaded = false, imgFightLoaded = false;
-        const imgIdle = new Image();
-        imgIdle.onload = () => { imgIdleLoaded = true; };
-        imgIdle.src = "char_a_p1_1out_pfpn_v01.png";[span_0](start_span)[span_0](end_span)
-
-        const imgFight = new Image();
-        imgFight.onload = () => { imgFightLoaded = true; };
-        imgFight.src = "char_a_p1_1out_fstr_v01.png";[span_1](start_span)[span_1](end_span)
-
-        // 2. Nhân Vật
+        // Nhân Vật
         let player = {
-            x: window.innerWidth / 2, y: window.innerHeight / 2,
-            size: 80, speed: 6,
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            radius: 30, speed: 5,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
 
         let fxList = [];
 
-        // 3. LOGIC JOYSTICK SỬA LỖI 100%
+        // JOYSTICK TOUCH HANDLER (100% Hoạt động)
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
-        let touchId = null;
+        let activeTouchId = null;
 
         zone.addEventListener("touchstart", (e) => {
             e.preventDefault();
             const touch = e.changedTouches[0];
-            touchId = touch.identifier;
-            updateJoystick(touch);
+            activeTouchId = touch.identifier;
+            moveKnob(touch);
         }, { passive: false });
 
         window.addEventListener("touchmove", (e) => {
-            if (touchId === null) return;
+            if (activeTouchId === null) return;
             for (let i = 0; i < e.changedTouches.length; i++) {
-                if (e.changedTouches[i].identifier === touchId) {
-                    updateJoystick(e.changedTouches[i]);
+                if (e.changedTouches[i].identifier === activeTouchId) {
+                    moveKnob(e.changedTouches[i]);
                     break;
                 }
             }
         }, { passive: false });
 
-        const resetJoystick = (e) => {
-            if (touchId === null) return;
+        const stopKnob = (e) => {
+            if (activeTouchId === null) return;
             for (let i = 0; i < e.changedTouches.length; i++) {
-                if (e.changedTouches[i].identifier === touchId) {
-                    touchId = null;
+                if (e.changedTouches[i].identifier === activeTouchId) {
+                    activeTouchId = null;
                     knob.style.transform = `translate(0px, 0px)`;
-                    player.vx = 0;
-                    player.vy = 0;
+                    player.vx = 0; player.vy = 0;
                     break;
                 }
             }
         };
 
-        window.addEventListener("touchend", resetJoystick);
-        window.addEventListener("touchcancel", resetJoystick);
+        window.addEventListener("touchend", stopKnob);
+        window.addEventListener("touchcancel", stopKnob);
 
-        function updateJoystick(touch) {
+        function moveKnob(touch) {
             const rect = zone.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
 
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
-            let distance = Math.hypot(dx, dy);
-            let maxRadius = 45;
+            let dx = touch.clientX - cx;
+            let dy = touch.clientY - cy;
+            let dist = Math.hypot(dx, dy);
+            let maxR = 40;
 
-            if (distance > maxRadius) {
-                dx = (dx / distance) * maxRadius;
-                dy = (dy / distance) * maxRadius;
+            if (dist > maxR) {
+                dx = (dx / dist) * maxR;
+                dy = (dy / dist) * maxR;
             }
 
-            // Dịch chuyển núm tròn visual
             knob.style.transform = `translate(${dx}px, ${dy}px)`;
-
-            // Gán tốc độ di chuyển cho nhân vật
-            player.vx = (dx / maxRadius) * player.speed;
-            player.vy = (dy / maxRadius) * player.speed;
+            player.vx = (dx / maxR) * player.speed;
+            player.vy = (dy / maxR) * player.speed;
         }
 
-        // 4. Xử lý Chiêu Thức
+        // CHIÊU THỨC
         function doAction(type) {
-            player.actionTimer = 25;
+            player.actionTimer = 20;
             if (type === "ATTACK") {
-                player.state = "ATTACK"; player.actionText = "👊 Đấm Côn Đồ!";
+                player.state = "ATTACK"; player.actionText = "👊 ĐẤM CÔN ĐỒ!";
             } else if (type === "DEFEND") {
-                player.state = "DEFEND"; player.actionText = "🛡️ Thủ Ghế!";
+                player.state = "DEFEND"; player.actionText = "🛡️ THỦ GHẾ!";
             } else if (type === "CHAI_BIA") {
-                player.state = "SKILL"; player.actionText = "🍾 Phi Chai Bia!";
-                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: 12, vy: 0, life: 30 });
+                player.state = "SKILL"; player.actionText = "🍾 PHI CHAI BIA!";
+                fxList.push({ type: "BOTTLE", x: player.x, y: player.y, vx: 12, life: 30 });
             } else if (type === "XOAY_BAN") {
-                player.state = "SKILL"; player.actionText = "🪑 Xoay Bàn Nhậu!";
-                fxList.push({ type: "SPIN_TABLE", x: player.x, y: player.y, radius: 10, life: 20 });
+                player.state = "SKILL"; player.actionText = "🪑 XOAY BÀN NHẬU!";
+                fxList.push({ type: "SPIN", x: player.x, y: player.y, r: 10, life: 20 });
             }
         }
 
@@ -174,70 +159,76 @@
         bindBtn("btn-skill1", "CHAI_BIA");
         bindBtn("btn-skill2", "XOAY_BAN");
 
-        // 5. Game Loop
+        // GAME LOOP
         function update() {
             player.x += player.vx;
             player.y += player.vy;
 
-            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
-            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
+            player.x = Math.max(35, Math.min(canvas.width - 35, player.x));
+            player.y = Math.max(35, Math.min(canvas.height - 35, player.y));
 
             if (player.actionTimer > 0) {
                 player.actionTimer--;
                 if (player.actionTimer === 0) player.state = "IDLE";
             }
 
-            fxList.forEach((fx, index) => {
+            fxList.forEach((fx, i) => {
                 fx.life--;
                 if (fx.type === "BOTTLE") fx.x += fx.vx;
-                if (fx.type === "SPIN_TABLE") fx.radius += 6;
-                if (fx.life <= 0) fxList.splice(index, 1);
+                if (fx.type === "SPIN") fx.r += 6;
+                if (fx.life <= 0) fxList.splice(i, 1);
             });
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Vẽ sàn
+            // Background Sàn quán
             ctx.fillStyle = "#3a2e2b";
-            ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ Skill
+            // Bàn nhậu trang trí
+            ctx.fillStyle = "#5c4033";
+            ctx.beginPath(); ctx.arc(100, 100, 40, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(canvas.width - 100, 120, 40, 0, Math.PI*2); ctx.fill();
+
+            // Hiệu ứng Chiêu
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
                     ctx.fillStyle = "#2ecc71";
-                    ctx.beginPath(); ctx.arc(fx.x, fx.y, 10, 0, Math.PI * 2); ctx.fill();
-                } else if (fx.type === "SPIN_TABLE") {
-                    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 4;
-                    ctx.beginPath(); ctx.arc(player.x, player.y, fx.radius, 0, Math.PI * 2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(fx.x, fx.y, 8, 0, Math.PI * 2); ctx.fill();
+                } else if (fx.type === "SPIN") {
+                    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 5;
+                    ctx.beginPath(); ctx.arc(player.x, player.y, fx.r, 0, Math.PI * 2); ctx.stroke();
                 }
             });
 
-            // Vẽ Nhân vật
-            let isFighting = (player.state !== "IDLE");
-            let targetImg = isFighting ? imgFight : imgIdle;
-            let isLoaded = isFighting ? imgFightLoaded : imgIdleLoaded;
+            // Vẽ Nhân Vật (Thuần Canvas)
+            ctx.save();
+            ctx.translate(player.x, player.y);
 
-            if (isLoaded) {
-                try {
-                    ctx.drawImage(targetImg, player.x - player.size/2, player.y - player.size/2, player.size, player.size);
-                } catch(e) { drawFallbackPlayer(); }
-            } else { drawFallbackPlayer(); }
+            // Thân
+            ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#2ecc71";
+            ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
 
-            // Giáp Phòng Thủ
+            // Mắt
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath(); ctx.arc(-8, -8, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(8, -8, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#000000";
+            ctx.beginPath(); ctx.arc(-7, -8, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(9, -8, 2, 0, Math.PI * 2); ctx.fill();
+
+            // Giáp Thủ
             if (player.state === "DEFEND") {
-                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 5;
-                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2 + 10, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 6;
+                ctx.beginPath(); ctx.arc(0, 0, player.radius + 8, 0, Math.PI * 2); ctx.stroke();
             }
 
-            // HUD Text
-            ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText(player.actionTimer > 0 ? player.actionText : "Kéo Cần Gạt Tròn Để Di Chuyển", canvas.width / 2, 40);
-        }
+            ctx.restore();
 
-        function drawFallbackPlayer() {
-            ctx.fillStyle = player.state === "DEFEND" ? "#3498db" : (player.state === "IDLE" ? "#2ecc71" : "#e74c3c");
-            ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2); ctx.fill();
+            // HUD Text
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(player.actionTimer > 0 ? player.actionText : "KÉO CẦN GẠT ĐỂ DI CHUYỂN", canvas.width / 2, 40);
         }
 
         function loop() {

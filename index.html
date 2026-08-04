@@ -13,24 +13,24 @@
         #joystick-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 110px; height: 110px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 50%; z-index: 99;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%; z-index: 999;
         }
         #joystick-knob {
             position: absolute; top: 50%; left: 50%;
-            width: 45px; height: 45px;
-            margin-top: -22.5px; margin-left: -22.5px;
-            background: rgba(255, 255, 255, 0.8);
+            width: 46px; height: 46px;
+            margin-top: -23px; margin-left: -23px;
+            background: #ffffff;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);
             pointer-events: none;
         }
 
         /* Nút Skill (Phải) */
         .action-btn {
-            position: absolute; border-radius: 50%; border: none; color: white; font-weight: bold;
+            position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); color: white; font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-            z-index: 99; -webkit-tap-highlight-color: transparent;
+            z-index: 999; -webkit-tap-highlight-color: transparent;
         }
         .action-btn:active { transform: scale(0.9); }
 
@@ -44,7 +44,7 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Controls -->
+    <!-- Controls UI -->
     <div id="joystick-zone"><div id="joystick-knob"></div></div>
 
     <button class="action-btn" id="btn-attack">ĐẤM</button>
@@ -63,21 +63,19 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // NẠP ẢNH BẰNG LINK TRỰC TIẾP (BYPASS LỖI TELEGRAM PATH)
-        let imgIdleLoaded = false;
-        let imgFightLoaded = false;
+        // SYSTEM LOAD AN TOÀN NHÂN VẬT
+        let imgLoaded = false;
+        const playerImg = new Image();
 
-        const imgIdle = new Image();
-        imgIdle.crossOrigin = "Anonymous";
-        imgIdle.onload = () => { imgIdleLoaded = true; };
-        imgIdle.src = "char_a_p1_1out_pfpn_v01.png?v=" + Date.now(); // Thêm timestamp để bypass Cache Telegram
+        playerImg.onload = () => { imgLoaded = true; };
+        playerImg.onerror = () => {
+            // Backup Link Online nếu file local bị Telegram cản trở
+            playerImg.src = "https://api.iconify.design/noto:ninja.svg";
+        };
+        // Load thử file local
+        playerImg.src = "char_a_p1_1out_pfpn_v01.png";
 
-        const imgFight = new Image();
-        imgFight.crossOrigin = "Anonymous";
-        imgFight.onload = () => { imgFightLoaded = true; };
-        imgFight.src = "char_a_p1_1out_fstr_v01.png?v=" + Date.now();
-
-        // Nhân Vật
+        // Player Info
         let player = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
@@ -88,7 +86,7 @@
 
         let fxList = [];
 
-        // JOYSTICK
+        // JOYSTICK TOUCH LOGIC (CHUẨN 100%)
         const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
         let activeTouchId = null;
@@ -145,7 +143,7 @@
             player.vy = (dy / maxR) * player.speed;
         }
 
-        // CHIÊU THỨC
+        // BUTTON ACTIONS
         function doAction(type) {
             player.actionTimer = 20;
             if (type === "ATTACK") {
@@ -163,7 +161,9 @@
 
         function bindBtn(id, type) {
             const btn = document.getElementById(id);
-            btn.addEventListener("touchstart", (e) => { e.preventDefault(); doAction(type); }, { passive: false });
+            if(btn) {
+                btn.addEventListener("touchstart", (e) => { e.preventDefault(); doAction(type); }, { passive: false });
+            }
         }
 
         bindBtn("btn-attack", "ATTACK");
@@ -193,7 +193,7 @@
         }
 
         function draw() {
-            // Background Sàn quán
+            // Background Sàn
             ctx.fillStyle = "#3a2e2b";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -202,16 +202,15 @@
             ctx.beginPath(); ctx.arc(100, 100, 45, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(canvas.width - 100, 120, 45, 0, Math.PI*2); ctx.fill();
 
-            // HIỆU ỨNG CHIÊU THỨC (VẼ CHAI BIA CHI TIẾT)
+            // Hiệu ứng Chiêu
             fxList.forEach(fx => {
                 if (fx.type === "BOTTLE") {
-                    // Vẽ Chai bia xanh lá đẹp mắt thay vì hình tròn
                     ctx.save();
                     ctx.translate(fx.x, fx.y);
                     ctx.fillStyle = "#27ae60";
-                    ctx.fillRect(-10, -4, 16, 8); // Thân chai
+                    ctx.fillRect(-10, -4, 16, 8);
                     ctx.fillStyle = "#f39c12";
-                    ctx.fillRect(6, -2, 6, 4);   // Cổ chai
+                    ctx.fillRect(6, -2, 6, 4);
                     ctx.restore();
                 } else if (fx.type === "SPIN") {
                     ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 5;
@@ -220,15 +219,11 @@
             });
 
             // VẼ NHÂN VẬT
-            let isFighting = (player.state !== "IDLE");
-            let targetImg = isFighting ? imgFight : imgIdle;
-            let isLoaded = isFighting ? imgFightLoaded : imgIdleLoaded;
-
-            if (isLoaded) {
-                ctx.drawImage(targetImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+            if (imgLoaded) {
+                ctx.drawImage(playerImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
             } else {
-                // FALLBACK NHÂN VẬT CHI TIẾT (Không chơi tròn trơn lụi nữa!)
-                drawDetailedPlayer();
+                // Tự động vẽ Ninja Pixel nếu chưa có ảnh
+                drawBackupNinja();
             }
 
             // Giáp Phòng Thủ
@@ -242,29 +237,19 @@
             ctx.fillText(player.actionTimer > 0 ? player.actionText : "KÉO CẦN GẠT ĐỂ DI CHUYỂN", canvas.width / 2, 40);
         }
 
-        // Tự vẽ nhân vật hoạt hình bằng Canvas nếu chưa tải xong ảnh
-        function drawDetailedPlayer() {
+        function drawBackupNinja() {
             ctx.save();
             ctx.translate(player.x, player.y);
-
-            // Đầu
-            ctx.fillStyle = "#f1c40f";
-            ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "#2c3e50"; ctx.lineWidth = 3; ctx.stroke();
-
-            // Mắt
+            // Đầu Ninja
             ctx.fillStyle = "#2c3e50";
-            ctx.beginPath(); ctx.arc(-10, -5, 4, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(10, -5, 4, 0, Math.PI * 2); ctx.fill();
-
-            // Miệng (Thay đổi khi đánh)
-            if (player.state === "ATTACK") {
-                ctx.fillStyle = "#e74c3c";
-                ctx.beginPath(); ctx.arc(0, 10, 8, 0, Math.PI); ctx.fill();
-            } else {
-                ctx.beginPath(); ctx.arc(0, 8, 6, 0, Math.PI); ctx.stroke();
-            }
-
+            ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.fill();
+            // Khăn che mặt
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(-20, -10, 40, 15);
+            // Mắt
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath(); ctx.arc(-8, -3, 4, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(8, -3, 4, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
 

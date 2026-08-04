@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Online - Pixel Demo</title>
-    <!-- Tải thư viện Phaser 3 từ CDN -->
+    <title>Nhậu Phố Online - Mobile Test</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body {
@@ -12,6 +11,7 @@
             padding: 0;
             background-color: #1a1a1a;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -22,13 +22,58 @@
         #game-container {
             width: 100%;
             max-width: 800px;
-            height: 600px;
+            height: 450px;
+        }
+        /* Giao diện cụm nút điều khiển trên điện thoại */
+        #controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 15px;
+            gap: 5px;
+        }
+        .control-row {
+            display: flex;
+            gap: 40px;
+        }
+        .btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            font-size: 24px;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            outline: none;
+            cursor: pointer;
+        }
+        .btn:active {
+            background-color: rgba(255, 165, 0, 0.6);
         }
     </style>
 </head>
 <body>
 
 <div id="game-container"></div>
+
+<!-- Các nút bấm ảo trên màn hình điện thoại -->
+<div id="controls">
+    <div class="control-row">
+        <div class="btn" id="btn-up">⬆️</div>
+    </div>
+    <div class="control-row">
+        <div class="btn" id="btn-left">⬅️</div>
+        <div class="btn" id="btn-right">➡️</div>
+    </div>
+    <div class="control-row">
+        <div class="btn" id="btn-down">⬇️</div>
+    </div>
+</div>
 
 <script>
 class MainScene extends Phaser.Scene {
@@ -37,21 +82,20 @@ class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        // Tạo sẵn các hình ảnh mẫu trực tiếp bằng code (không cần tải file ảnh ngoài để test nhanh)
         let graphics = this.make.graphics({ x: 0, y: 0, add: false });
 
-        // 1. Tạo ô nền vỉa hè (màu xám rêu)
+        // Nền vỉa hè
         graphics.fillStyle(0x4a5d4e);
         graphics.fillRect(0, 0, 32, 32);
         graphics.generateTexture('ground_tile', 32, 32);
 
-        // 2. Tạo vật cản / Bàn nhậu (màu nâu gỗ)
+        // Bàn nhậu
         graphics.clear();
         graphics.fillStyle(0x8b4513);
         graphics.fillRect(0, 0, 48, 32);
         graphics.generateTexture('table_sprite', 48, 32);
 
-        // 3. Tạo nhân vật player (hình ô vuông cam có viền)
+        // Nhân vật
         graphics.clear();
         graphics.fillStyle(0xffa500);
         graphics.fillRect(0, 0, 28, 28);
@@ -61,76 +105,69 @@ class MainScene extends Phaser.Scene {
     }
 
     create() {
-        // Lấp đầy màn hình bằng nền vỉa hè
         for (let x = 0; x < 800; x += 32) {
             for (let y = 0; y < 600; y += 32) {
                 this.add.image(x + 16, y + 16, 'ground_tile');
             }
         }
 
-        // Tạo nhóm vật cản (Các bàn nhậu trong quán)
         this.tables = this.physics.add.staticGroup();
         this.tables.create(200, 200, 'table_sprite');
         this.tables.create(500, 200, 'table_sprite');
-        this.tables.create(350, 400, 'table_sprite');
+        this.tables.create(350, 350, 'table_sprite');
 
-        // Tạo nhân vật chính
-        this.player = this.physics.add.sprite(400, 300, 'player_sprite');
+        this.player = this.physics.add.sprite(400, 200, 'player_sprite');
         this.player.setCollideWorldBounds(true);
-
-        // Thiết lập va chạm giữa nhân vật và bàn nhậu
         this.physics.add.collider(this.player, this.tables);
 
-        // Hướng dẫn trên màn hình
-        this.add.text(16, 16, 'DEMO NHẬU PHỐ ONLINE\nDùng các phím Mũi tên hoặc WASD để di chuyển', {
-            fontSize: '16px',
-            fill: '#ffffff',
-            backgroundColor: '#000000',
-            padding: { x: 8, y: 8 }
-        });
+        // Biến trạng thái điều khiển trên mobile
+        window.moveState = { left: false, right: false, up: false, down: false };
 
-        // Thiết lập bàn phím điều khiển
+        // Gắn sự kiện cảm ứng cho các nút HTML bên dưới
+        const bindButton = (id, direction) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); window.moveState[direction] = true; });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); window.moveState[direction] = false; });
+            // Hỗ trợ cả click chuột test trên máy tính
+            el.addEventListener('mousedown', () => { window.moveState[direction] = true; });
+            el.addEventListener('mouseup', () => { window.moveState[direction] = false; });
+        };
+
+        bindButton('btn-up', 'up');
+        bindButton('btn-down', 'down');
+        bindButton('btn-left', 'left');
+        bindButton('btn-right', 'right');
+
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.wasd = this.input.keyboard.addKeys({
-            up: Phaser.Input.Keyboard.KeyCodes.W,
-            down: Phaser.Input.Keyboard.KeyCodes.S,
-            left: Phaser.Input.Keyboard.KeyCodes.A,
-            right: Phaser.Input.Keyboard.KeyCodes.D
-        });
     }
 
     update() {
         const speed = 160;
         this.player.setVelocity(0);
 
-        // Xử lý di chuyển trái / phải
-        if (this.cursors.left.isDown || this.wasd.left.isDown) {
+        // Kiểm tra phím bàn phím hoặc nút ảo mobile
+        if (this.cursors.left.isDown || window.moveState.left) {
             this.player.setVelocityX(-speed);
-        } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+        } else if (this.cursors.right.isDown || window.moveState.right) {
             this.player.setVelocityX(speed);
         }
 
-        // Xử lý di chuyển lên / xuống
-        if (this.cursors.up.isDown || this.wasd.up.isDown) {
+        if (this.cursors.up.isDown || window.moveState.up) {
             this.player.setVelocityY(-speed);
-        } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+        } else if (this.cursors.down.isDown || window.moveState.down) {
             this.player.setVelocityY(speed);
         }
     }
 }
 
-// Cấu hình khung game
 const config = {
     type: Phaser.AUTO,
     width: 800,
-    height: 600,
+    height: 450,
     parent: 'game-container',
     physics: {
         default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
+        arcade: { gravity: { y: 0 }, debug: false }
     },
     scene: [MainScene]
 };

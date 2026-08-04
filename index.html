@@ -2,112 +2,140 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Nhậu Phố Simulator 2D</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nhậu Phố Online - Pixel Demo</title>
+    <!-- Tải thư viện Phaser 3 từ CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body {
-            margin: 0; padding: 0;
-            background: #1e1e24; color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center; user-select: none;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             overflow: hidden;
+            color: #fff;
+            font-family: Arial, sans-serif;
         }
-        #app {
-            display: flex; flex-direction: column;
-            justify-content: space-between; height: 100vh;
-            padding: 20px 15px; box-sizing: border-box;
+        #game-container {
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
         }
-        .user-card {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 15px; border-radius: 16px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .score-val { font-size: 32px; font-weight: bold; color: #f1c40f; }
-        .beer-container { margin: 20px 0; cursor: pointer; }
-        .beer-icon {
-            font-size: 110px; display: inline-block;
-            transition: transform 0.08s ease;
-            filter: drop-shadow(0 10px 20px rgba(241, 196, 15, 0.3));
-        }
-        .beer-icon:active { transform: scale(0.85) rotate(-10deg); }
-        .shop-box {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px; border-radius: 16px;
-        }
-        .btn-buy {
-            background: linear-gradient(135deg, #e67e22, #d35400);
-            color: white; border: none; padding: 12px;
-            font-size: 15px; border-radius: 10px;
-            font-weight: bold; width: 100%; margin-top: 8px;
-            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-        .btn-buy:disabled { background: #555; opacity: 0.6; }
     </style>
 </head>
 <body>
 
-<div id="app">
-    <div class="user-card">
-        <h3 id="user-name">🍺 Chủ Quán Nhậu</h3>
-        <div>Đô nhậu hiện tại: <div class="score-val" id="score">0 🍻</div></div>
-    </div>
-
-    <div class="beer-container" onclick="tapBeer()">
-        <div class="beer-icon" id="beer">🍻</div>
-        <div style="color: #888; font-size: 13px; margin-top: 10px;">Chạm liên tục để cụng ly!</div>
-    </div>
-
-    <div class="shop-box">
-        <h4 style="margin: 0 0 10px 0; color: #e74c3c;">Menu Mồi Nhậu 🥓</h4>
-        <button class="btn-buy" id="btn-lac" onclick="buyMoi('lac')">🥜 Đĩa Lạc Rang (Giá: 10 🍺) [+1/s]</button>
-        <button class="btn-buy" id="btn-muc" onclick="buyMoi('muc')">🦑 Mực Nướng Cồn (Giá: 50 🍺) [+5/s]</button>
-    </div>
-</div>
+<div id="game-container"></div>
 
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    let score = 0;
-    let dps = 0;
-    let costLac = 10, costMuc = 50;
-    let rateLac = 1, rateMuc = 5;
-
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        document.getElementById('user-name').innerText = "🍺 " + tg.initDataUnsafe.user.first_name;
+class MainScene extends Phaser.Scene {
+    constructor() {
+        super('MainScene');
     }
 
-    function tapBeer() {
-        score++;
-        update();
-        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    preload() {
+        // Tạo sẵn các hình ảnh mẫu trực tiếp bằng code (không cần tải file ảnh ngoài để test nhanh)
+        let graphics = this.make.graphics({ x: 0, y: 0, add: false });
+
+        // 1. Tạo ô nền vỉa hè (màu xám rêu)
+        graphics.fillStyle(0x4a5d4e);
+        graphics.fillRect(0, 0, 32, 32);
+        graphics.generateTexture('ground_tile', 32, 32);
+
+        // 2. Tạo vật cản / Bàn nhậu (màu nâu gỗ)
+        graphics.clear();
+        graphics.fillStyle(0x8b4513);
+        graphics.fillRect(0, 0, 48, 32);
+        graphics.generateTexture('table_sprite', 48, 32);
+
+        // 3. Tạo nhân vật player (hình ô vuông cam có viền)
+        graphics.clear();
+        graphics.fillStyle(0xffa500);
+        graphics.fillRect(0, 0, 28, 28);
+        graphics.lineStyle(2, 0xffffff);
+        graphics.strokeRect(0, 0, 28, 28);
+        graphics.generateTexture('player_sprite', 28, 28);
     }
 
-    function buyMoi(type) {
-        if (type === 'lac' && score >= costLac) {
-            score -= costLac; dps += rateLac;
-            costLac = Math.floor(costLac * 1.4);
-        } else if (type === 'muc' && score >= costMuc) {
-            score -= costMuc; dps += rateMuc;
-            costMuc = Math.floor(costMuc * 1.4);
+    create() {
+        // Lấp đầy màn hình bằng nền vỉa hè
+        for (let x = 0; x < 800; x += 32) {
+            for (let y = 0; y < 600; y += 32) {
+                this.add.image(x + 16, y + 16, 'ground_tile');
+            }
         }
-        update();
+
+        // Tạo nhóm vật cản (Các bàn nhậu trong quán)
+        this.tables = this.physics.add.staticGroup();
+        this.tables.create(200, 200, 'table_sprite');
+        this.tables.create(500, 200, 'table_sprite');
+        this.tables.create(350, 400, 'table_sprite');
+
+        // Tạo nhân vật chính
+        this.player = this.physics.add.sprite(400, 300, 'player_sprite');
+        this.player.setCollideWorldBounds(true);
+
+        // Thiết lập va chạm giữa nhân vật và bàn nhậu
+        this.physics.add.collider(this.player, this.tables);
+
+        // Hướng dẫn trên màn hình
+        this.add.text(16, 16, 'DEMO NHẬU PHỐ ONLINE\nDùng các phím Mũi tên hoặc WASD để di chuyển', {
+            fontSize: '16px',
+            fill: '#ffffff',
+            backgroundColor: '#000000',
+            padding: { x: 8, y: 8 }
+        });
+
+        // Thiết lập bàn phím điều khiển
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.wasd = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
     }
 
-    function update() {
-        document.getElementById('score').innerText = score + " 🍻";
-        document.getElementById('btn-lac').innerText = `🥜 Đĩa Lạc Rang (${costLac} 🍺) [+${rateLac}/s]`;
-        document.getElementById('btn-muc').innerText = `🦑 Mực Nướng Cồn (${costMuc} 🍺) [+${rateMuc}/s]`;
-        
-        document.getElementById('btn-lac').disabled = score < costLac;
-        document.getElementById('btn-muc').disabled = score < costMuc;
-    }
+    update() {
+        const speed = 160;
+        this.player.setVelocity(0);
 
-    setInterval(() => {
-        score += dps;
-        update();
-    }, 1000);
+        // Xử lý di chuyển trái / phải
+        if (this.cursors.left.isDown || this.wasd.left.isDown) {
+            this.player.setVelocityX(-speed);
+        } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+            this.player.setVelocityX(speed);
+        }
+
+        // Xử lý di chuyển lên / xuống
+        if (this.cursors.up.isDown || this.wasd.up.isDown) {
+            this.player.setVelocityY(-speed);
+        } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+            this.player.setVelocityY(speed);
+        }
+    }
+}
+
+// Cấu hình khung game
+const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    parent: 'game-container',
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
+    },
+    scene: [MainScene]
+};
+
+const game = new Phaser.Game(config);
 </script>
 
 </body>

@@ -38,9 +38,18 @@
         #btn-defend { bottom: 120px; right: 25px; width: 55px; height: 55px; background: #3498db; font-size: 13px; }
         #btn-skill1 { bottom: 30px; right: 120px; width: 55px; height: 55px; background: #f1c40f; color: #2c3e50; font-size: 13px; }
         #btn-skill2 { bottom: 95px; right: 90px; width: 55px; height: 55px; background: #9b59b6; font-size: 13px; }
+
+        /* Mẹo ẩn ảnh trong HTML để ép trình duyệt load trước */
+        .hidden-assets { display: none; }
     </style>
 </head>
 <body>
+
+    <!-- Nạp sẵn ảnh vào DOM để tránh lỗi CORS / Load chậm trên Telegram -->
+    <div class="hidden-assets">
+        <img id="sprite-idle" src="char_a_p1_1out_pfpn_v01.png" crossorigin="anonymous">
+        <img id="sprite-fight" src="char_a_p1_1out_fstr_v01.png" crossorigin="anonymous">
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -63,25 +72,15 @@
         resize();
         window.addEventListener("resize", resize);
 
-        // --- NẠP AN TOÀN SPRITE NHÂN VẬT ---
-        let imgIdleLoaded = false;
-        let imgFightLoaded = false;
-
-        const imgIdle = new Image();
-        imgIdle.onload = () => { imgIdleLoaded = true; };
-        imgIdle.onerror = () => { imgIdleLoaded = false; };
-        imgIdle.src = "./char_a_p1_1out_pfpn_v01.png"; // Đường dẫn tương đối chuẩn
-
-        const imgFight = new Image();
-        imgFight.onload = () => { imgFightLoaded = true; };
-        imgFight.onerror = () => { imgFightLoaded = false; };
-        imgFight.src = "./char_a_p1_1out_fstr_v01.png"; // Đường dẫn tương đối chuẩn
+        // Lấy Element ảnh đã được nạp sẵn từ HTML
+        const imgIdle = document.getElementById("sprite-idle");
+        const imgFight = document.getElementById("sprite-fight");
 
         // Nhân Vật
         let player = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
-            size: 80, speed: 5,
+            size: 90, speed: 5,
             vx: 0, vy: 0,
             state: "IDLE", actionText: "", actionTimer: 0
         };
@@ -176,8 +175,8 @@
             player.x += player.vx;
             player.y += player.vy;
 
-            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
-            player.y = Math.max(40, Math.min(canvas.height - 40, player.y));
+            player.x = Math.max(45, Math.min(canvas.width - 45, player.x));
+            player.y = Math.max(45, Math.min(canvas.height - 45, player.y));
 
             if (player.actionTimer > 0) {
                 player.actionTimer--;
@@ -199,8 +198,8 @@
 
             // Bàn nhậu trang trí
             ctx.fillStyle = "#5c4033";
-            ctx.beginPath(); ctx.arc(100, 100, 40, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(canvas.width - 100, 120, 40, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(100, 100, 45, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(canvas.width - 100, 120, 45, 0, Math.PI*2); ctx.fill();
 
             // Hiệu ứng Chiêu
             fxList.forEach(fx => {
@@ -213,13 +212,11 @@
                 }
             });
 
-            // VẼ NHÂN VẬT (Dùng Sprite nếu đã load, không thì dùng Fallback)
+            // VẼ NHÂN VẬT TỪ ẢNH HTML
             let isFighting = (player.state !== "IDLE");
             let targetImg = isFighting ? imgFight : imgIdle;
-            let isLoaded = isFighting ? imgFightLoaded : imgIdleLoaded;
 
-            if (isLoaded) {
-                // Tự động scale ảnh về kích thước chuẩn 80x80
+            if (targetImg.complete && targetImg.naturalWidth !== 0) {
                 ctx.drawImage(
                     targetImg, 
                     player.x - player.size / 2, 
@@ -228,8 +225,9 @@
                     player.size
                 );
             } else {
-                // Fallback nếu ảnh chưa tải xong hoặc sai tên
-                drawFallbackPlayer();
+                // Nếu ảnh tệp bị thiếu thực sự trên Github mới vẽ hình tròn
+                ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#2ecc71";
+                ctx.beginPath(); ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2); ctx.fill();
             }
 
             // Giáp Phòng Thủ
@@ -241,15 +239,6 @@
             // HUD Text
             ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
             ctx.fillText(player.actionTimer > 0 ? player.actionText : "KÉO CẦN GẠT ĐỂ DI CHUYỂN", canvas.width / 2, 40);
-        }
-
-        function drawFallbackPlayer() {
-            ctx.save();
-            ctx.translate(player.x, player.y);
-            ctx.fillStyle = player.state === "ATTACK" ? "#e74c3c" : "#2ecc71";
-            ctx.beginPath(); ctx.arc(0, 0, player.size/2, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
-            ctx.restore();
         }
 
         function loop() {

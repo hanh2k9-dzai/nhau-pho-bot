@@ -10,7 +10,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot Nhau Pho Simulator is Running Live!")
+        self.wfile.write(b"Bot Nhau Pho Online is Running Live!")
 
 def run_health_check_server():
     port = int(os.environ.get("PORT", 8080))
@@ -19,7 +19,7 @@ def run_health_check_server():
     server.serve_forever()
 
 # --- MAIN BOT TELEGRAM ---
-TOKEN = os.getenv("BOT_TOKEN", "8910844792:AAFCjZWeWikS4p3OOfE1QQcOOQ30Bvueo-U")
+TOKEN = os.getenv("BOT_TOKEN", "8910844792:AAFCoszqY8NNxWSeOgwJ2rxsmDrRZBJvF_M")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -37,7 +37,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"Chào sếp **{user_name}** đến với **Nhậu Phố Simulator**! 🍻\n\n"
+        f"Chào sếp **{user_name}** đến với **Nhậu Phố Online**! 🍻\n\n"
         f"Hãy bấm nút bên dưới để mở quán và thách bia anh em vỉa hè ngay!",
         reply_markup=reply_markup,
         parse_mode="Markdown"
@@ -50,5 +50,5 @@ if __name__ == '__main__':
     # Chạy Telegram Bot
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    print("🚀 Bot Nhậu Phố Simulator đang chạy...")
+    print("🚀 Bot Nhậu Phố Online đang chạy...")
     app.run_polling()

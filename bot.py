@@ -19,7 +19,7 @@ def run_health_check_server():
     server.serve_forever()
 
 # --- MAIN BOT TELEGRAM ---
-TOKEN = os.getenv("BOT_TOKEN", "8910844792:AAGEF1yngjYZzkfC_WF7AWJo9NWW00154Nw")
+TOKEN = os.getenv("BOT_TOKEN", "8910844792:AAFCjZWeWikS4p3OOfE1QQcOOQ30Bvueo-U")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
